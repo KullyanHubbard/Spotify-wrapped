@@ -27,13 +27,13 @@ const toTrack = (t: SpTrack): Track => ({
 });
 
 export async function GET(request: NextRequest) {
-  const token = await getAccessToken();
-  if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   const param = request.nextUrl.searchParams.get("range") as TimeRange | null;
   const range: TimeRange = param && RANGES.includes(param) ? param : "medium_term";
 
   try {
+    const token = await getAccessToken();
+    if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
     const [me, artists, tracks, longTerm, recent] = await Promise.all([
       spotifyGet<{ display_name: string | null; id: string; images?: SpImage[] }>("/me", token),
       spotifyGet<Paging<SpArtist>>(`/me/top/artists?limit=50&time_range=${range}`, token),
@@ -59,11 +59,13 @@ export async function GET(request: NextRequest) {
     };
     return NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
+    // Detail error hanya di log server. Selalu balas JSON (bukan throw), supaya cookie hasil refresh tetap terkirim.
+    console.error(e);
     if (e instanceof SpotifyError) {
       // 403 di Development Mode biasanya berarti akun belum ada di allowlist (User Management).
       const error = e.status === 403 ? "not_allowlisted" : e.status === 429 ? "rate_limited" : "spotify_error";
-      return NextResponse.json({ error, detail: e.message }, { status: e.status });
+      return NextResponse.json({ error }, { status: e.status });
     }
-    throw e;
+    return NextResponse.json({ error: "spotify_error" }, { status: 502 });
   }
 }

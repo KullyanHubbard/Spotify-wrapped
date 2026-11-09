@@ -11,14 +11,22 @@ export async function GET(request: NextRequest) {
   } catch {
     return new Response("bad url", { status: 400 });
   }
-  if (target.protocol !== "https:" || !ALLOWED_HOSTS.has(target.hostname)) {
+  if (target.protocol !== "https:" || target.port || target.username || target.password || !ALLOWED_HOSTS.has(target.hostname)) {
     return new Response("host not allowed", { status: 400 });
   }
-  const upstream = await fetch(target, { cache: "no-store" });
-  if (!upstream.ok || !upstream.body) return new Response("upstream error", { status: 502 });
+  // redirect: "error" supaya redirect dari CDN tidak bisa keluar dari allowlist host.
+  const upstream = await fetch(target, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(10_000) }).catch(
+    () => null,
+  );
+  // Hanya gambar raster: HTML atau SVG dari upstream akan dieksekusi di origin app ini.
+  const contentType = upstream?.headers.get("Content-Type") ?? "";
+  if (!upstream?.ok || !upstream.body || !/^image\/(jpeg|png|webp)\b/.test(contentType)) {
+    return new Response("upstream error", { status: 502 });
+  }
   return new Response(upstream.body, {
     headers: {
-      "Content-Type": upstream.headers.get("Content-Type") ?? "image/jpeg",
+      "Content-Type": contentType,
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "public, max-age=86400, immutable",
     },
   });

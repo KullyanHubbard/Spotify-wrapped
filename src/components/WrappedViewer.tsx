@@ -31,6 +31,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const [range, setRange] = useState<TimeRange>("medium_term");
   const [data, setData] = useState<WrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [index, setIndex] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [hint, setHint] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
     return () => {
       cancelled = true;
     };
-  }, [range]);
+  }, [range, attempt]);
 
   const stats = useMemo(() => (data ? computeStats(data) : null), [data]);
 
@@ -165,12 +166,24 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
       <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-5 p-6">
         <span className="border-b border-ink pb-2 text-xs font-semibold uppercase tracking-[0.25em] text-press-red">Ralat</span>
         <p className="font-headline text-3xl font-bold leading-tight">{error}</p>
-        <a
-          href="/api/auth/login"
-          className="self-start bg-ink px-6 py-3 font-headline text-lg font-bold text-newsprint transition-colors hover:bg-press-red"
-        >
-          Login ulang →
-        </a>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => {
+              setError(null);
+              setData(null);
+              setAttempt((n) => n + 1);
+            }}
+            className="bg-ink px-6 py-3 font-headline text-lg font-bold text-newsprint transition-colors hover:bg-press-red"
+          >
+            Coba lagi
+          </button>
+          <a
+            href="/api/auth/login"
+            className="border border-ink px-6 py-3 font-headline text-lg font-bold transition-colors hover:bg-ink/5"
+          >
+            Login ulang →
+          </a>
+        </div>
       </main>
     );
   }
@@ -228,7 +241,11 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
         <select
           aria-label="Rentang waktu"
           value={range}
-          onChange={(e) => setRange(e.target.value as TimeRange)}
+          onChange={(e) => {
+            // Kosongkan data supaya tampil loading, bukan slide rentang lama di bawah pilihan baru.
+            setData(null);
+            setRange(e.target.value as TimeRange);
+          }}
           className="min-w-0 flex-1 appearance-none border border-ink bg-newsprint px-3 py-2.5"
         >
           {(Object.keys(RANGE_SHORT_LABEL) as TimeRange[]).map((r) => (

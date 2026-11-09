@@ -78,7 +78,7 @@ async function tokenRequest(body: Record<string, string>): Promise<TokenResponse
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new Error(`Spotify token error ${res.status}: ${await res.text()}`);
+    throw new SpotifyError(res.status, `Spotify token error ${res.status}: ${await res.text()}`);
   }
   return res.json();
 }
@@ -139,7 +139,9 @@ export async function getAccessToken(): Promise<string | null> {
     const tokens = await refreshToken(refresh);
     await saveTokens(tokens);
     return tokens.access_token;
-  } catch {
+  } catch (e) {
+    // Hanya 400 (invalid_grant) yang berarti refresh token mati. Error jaringan/5xx dilempar supaya sesi tidak ikut terhapus.
+    if (!(e instanceof SpotifyError && e.status === 400)) throw e;
     await clearTokens();
     return null;
   }

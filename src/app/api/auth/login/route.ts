@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(authorizeUrl(state, await codeChallenge(verifier)));
   } catch (err) {
     console.error("Login route error:", err);
-    const message = err instanceof Error ? err.message : "unknown_error";
-    return NextResponse.redirect(new URL(`/?error=${encodeURIComponent(message)}`, request.url));
+    return NextResponse.redirect(new URL("/?error=config_error", request.url));
   }
 }

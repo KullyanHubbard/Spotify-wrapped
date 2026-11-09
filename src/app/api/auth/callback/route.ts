@@ -4,7 +4,7 @@ import { appUrl, COOKIE, exchangeCode, saveTokens } from "@/lib/spotify";
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
-  const fail = (reason: string) => NextResponse.redirect(appUrl(`/?error=${reason}`));
+  const fail = (reason: string) => NextResponse.redirect(appUrl(`/?error=${encodeURIComponent(reason)}`));
 
   const error = url.searchParams.get("error");
   if (error) return fail(error);
