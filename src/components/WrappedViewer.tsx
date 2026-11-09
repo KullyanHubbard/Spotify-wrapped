@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toBlob } from "html-to-image";
 import { SLIDES } from "./Slides";
-import { computeStats, RANGE_LABEL } from "@/lib/stats";
+import { computeStats } from "@/lib/stats";
 import type { TimeRange, WrappedData } from "@/lib/types";
+
+const SHORT_RANGE: Record<TimeRange, string> = { short_term: "4 minggu", medium_term: "6 bulan", long_term: "1 tahun" };
 
 const ERRORS: Record<string, string> = {
   not_allowlisted:
@@ -81,58 +83,65 @@ export default function WrappedViewer() {
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-6 p-6 text-center">
-        <p className="text-lg">{error}</p>
-        <a href="/api/auth/login" className="rounded-full bg-[#1DB954] px-6 py-3 font-bold text-black">
-          Login ulang
+      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-6 p-6">
+        <span className="self-start bg-signal px-2 py-1 font-mono text-xs uppercase">Error</span>
+        <p className="text-2xl font-extrabold leading-tight tracking-tight">{error}</p>
+        <a href="/api/auth/login" className="brut self-start bg-acid px-6 py-3 font-mono text-sm font-bold uppercase">
+          Login ulang →
         </a>
       </main>
     );
   }
 
   if (!stats || !data) {
-    return <main className="flex min-h-dvh items-center justify-center text-lg opacity-70">Lagi ngumpulin data kamu...</main>;
+    return (
+      <main className="flex min-h-dvh items-center justify-center">
+        <p className="animate-pulse font-mono text-sm uppercase">Lagi ngumpulin data kamu...</p>
+      </main>
+    );
   }
 
   const Slide = SLIDES[index];
+  const width = "min(calc(100vw - 2rem), calc((100dvh - 9rem) * 9 / 16))";
 
   return (
-    <main className="flex min-h-dvh flex-col items-center gap-3 py-3">
-      <div className="relative" style={{ width: "min(100vw, calc((100dvh - 7.5rem) * 9 / 16))" }}>
-        <div ref={slideRef} className="@container aspect-[9/16] w-full overflow-hidden sm:rounded-2xl">
-          <Slide stats={stats} name={data.user.name} range={data.range} />
-        </div>
+    <main className="flex min-h-dvh flex-col items-center gap-4 px-4 py-4">
+      <div className="flex gap-1" style={{ width }}>
+        {SLIDES.map((_, i) => (
+          <button
+            key={i}
+            aria-label={`Slide ${i + 1}`}
+            onClick={() => setIndex(i)}
+            className={`h-2 flex-1 border-2 border-ink ${i <= index ? "bg-ink" : "bg-paper"}`}
+          />
+        ))}
+      </div>
 
-        <div className="pointer-events-none absolute inset-x-3 top-3 flex gap-1">
-          {SLIDES.map((_, i) => (
-            <div key={i} className={`h-1 flex-1 rounded-full ${i <= index ? "bg-white" : "bg-white/30"}`} />
-          ))}
+      <div className="relative border-2 border-ink shadow-[6px_6px_0_var(--color-ink)]" style={{ width }}>
+        <div ref={slideRef} className="@container aspect-[9/16] w-full overflow-hidden">
+          <Slide stats={stats} name={data.user.name} range={data.range} n={index + 1} total={SLIDES.length} />
         </div>
         <button aria-label="Sebelumnya" className="absolute inset-y-0 left-0 w-1/3" onClick={() => go(-1)} />
         <button aria-label="Berikutnya" className="absolute inset-y-0 right-0 w-2/3" onClick={() => go(1)} />
       </div>
 
-      <div className="flex w-full max-w-md items-center gap-2 px-4">
+      <div className="flex items-stretch gap-3 font-mono text-xs font-bold uppercase" style={{ width }}>
         <select
           value={range}
           onChange={(e) => setRange(e.target.value as TimeRange)}
-          className="flex-1 rounded-full bg-neutral-800 px-4 py-3 text-sm"
+          className="brut min-w-0 flex-1 appearance-none bg-paper px-3 py-3 uppercase"
         >
-          {(Object.keys(RANGE_LABEL) as TimeRange[]).map((r) => (
+          {(Object.keys(SHORT_RANGE) as TimeRange[]).map((r) => (
             <option key={r} value={r}>
-              {RANGE_LABEL[r]}
+              {SHORT_RANGE[r]}
             </option>
           ))}
         </select>
-        <button
-          onClick={share}
-          disabled={busy}
-          className="shrink-0 rounded-full bg-[#1DB954] px-5 py-3 text-sm font-bold text-black disabled:opacity-50"
-        >
-          {busy ? "Membuat..." : "Share"}
+        <button onClick={share} disabled={busy} className="brut shrink-0 bg-acid px-4 py-3 uppercase disabled:opacity-50">
+          {busy ? "..." : "Share ↗"}
         </button>
-        <form action="/api/auth/logout" method="post">
-          <button className="rounded-full bg-neutral-800 px-4 py-3 text-sm">Keluar</button>
+        <form action="/api/auth/logout" method="post" className="flex">
+          <button className="brut bg-paper px-3 py-3 uppercase">Keluar</button>
         </form>
       </div>
     </main>
