@@ -26,7 +26,7 @@ Sumber: [Quota modes](https://developer.spotify.com/documentation/web-api/concep
 - `src/app/api/auth/*` login, callback (tukar code + verifier), logout. Token disimpan di cookie httpOnly, refresh otomatis di `src/lib/spotify.ts`.
 - `src/app/api/wrapped` ambil `/me`, top artists/tracks (50), recently played (50).
 - `src/app/api/image` proxy gambar `i.scdn.co` supaya export canvas tidak kena CORS.
-- `src/components/Slides.tsx` desain slide 9:16 (pakai container query unit `cqw`, jadi skala ikut lebar).
+- `src/designs/<id>/` design slide 9:16 yang bisa dipilih user (pakai container query unit `cqw`, jadi skala ikut lebar). Lihat `CLAUDE.md` untuk aturan struktur.
 - `src/components/WrappedViewer.tsx` navigasi ala story + export via `html-to-image`. Di HP, tombol Share memakai Web Share API sehingga gambar bisa langsung dikirim ke Instagram; di desktop jatuh ke download.
 
 ## Scope OAuth

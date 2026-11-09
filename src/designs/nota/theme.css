@@ -1,0 +1,8 @@
+/* Token design Nota (struk kasir). Semua berawalan nota- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-nota-mono: var(--font-nota-mono-face);
+  --color-nota-desk: #2e2b28;
+  --color-nota-paper: #fbfaf6;
+  --color-nota-ink: #1a1a1a;
+  --color-nota-faded: #6b6b6b;
+}

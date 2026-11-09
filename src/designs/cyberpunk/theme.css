@@ -1,0 +1,15 @@
+/* Token design Cyberpunk. Semua berawalan cyberpunk- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-cyberpunk-display: var(--font-cyberpunk-display-face);
+  --font-cyberpunk-mono: var(--font-cyberpunk-mono-face);
+  --color-cyberpunk-bg: #0a0d12;
+  --color-cyberpunk-panel: #10161d;
+  --color-cyberpunk-grid: #1b2a24;
+  --color-cyberpunk-text: #d1d5db;
+  --color-cyberpunk-dim: #6b7280;
+  --color-cyberpunk-white: #f1f5f9;
+  --color-cyberpunk-green: #4ade80;
+  --color-cyberpunk-magenta: #e879f9;
+  --color-cyberpunk-purple: #a78bfa;
+  --color-cyberpunk-cyan: #22d3ee;
+}

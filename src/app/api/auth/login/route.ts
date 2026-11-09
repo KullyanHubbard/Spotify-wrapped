@@ -5,8 +5,10 @@ import { authorizeUrl, codeChallenge, cookieBase, COOKIE, appUrl, randomString }
 export async function GET(request: NextRequest) {
   const jar = await cookies();
   // Cookie PKCE harus di-set di host yang sama dengan redirect URI (mis. 127.0.0.1, bukan localhost).
-  if (request.headers.get("host") !== appUrl("/").host) {
-    return NextResponse.redirect(appUrl(request.nextUrl.pathname));
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  // Param "r" mencegah redirect loop kalau proxy menulis ulang host; lanjut login saja.
+  if (host !== appUrl("/").host && !request.nextUrl.searchParams.has("r")) {
+    return NextResponse.redirect(appUrl(`${request.nextUrl.pathname}?r=1`));
   }
 
   const verifier = randomString(64);

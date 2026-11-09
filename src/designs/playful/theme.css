@@ -1,0 +1,13 @@
+/* Token design Playful Geometric. Semua berawalan playful- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-playful-display: var(--font-playful-display-face);
+  --color-playful-cream: #fffaf0;
+  --color-playful-ink: #1e293b;
+  --color-playful-muted: #64748b;
+  --color-playful-purple: #8b5cf6;
+  --color-playful-yellow: #fbbf24;
+  --color-playful-pink: #f472b6;
+  --color-playful-lavender: #ddd6fe;
+  --color-playful-mint: #34d399;
+  --color-playful-lime: #d9f99d;
+}

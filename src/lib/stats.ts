@@ -66,4 +66,5 @@ export const RANGE_LABEL = {
   long_term: "setahun terakhir",
 } as const;
 
-export const img = (url: string | null) => (url ? `/api/image?u=${encodeURIComponent(url)}` : null);
+/** URL gambar Spotify lewat proxy same-origin, supaya bisa diekspor html-to-image. */
+export const proxiedImageUrl = (url: string | null) => (url ? `/api/image?u=${encodeURIComponent(url)}` : null);

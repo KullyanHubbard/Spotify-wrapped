@@ -94,12 +94,20 @@ export function exchangeCode(code: string, verifier: string) {
   });
 }
 
+// Spotify merotasi refresh token, jadi request paralel dengan token yang sama harus berbagi satu refresh.
+// shortcut: hanya dedupe dalam satu proses server, pindah ke store bersama (Redis/KV) kalau jalan multi-instance.
+const inflight = new Map<string, Promise<TokenResponse>>();
+
 function refreshToken(refresh: string) {
-  return tokenRequest({
-    grant_type: "refresh_token",
-    refresh_token: refresh,
-    client_id: env().clientId,
-  });
+  let p = inflight.get(refresh);
+  if (!p) {
+    p = tokenRequest({ grant_type: "refresh_token", refresh_token: refresh, client_id: env().clientId });
+    inflight.set(refresh, p);
+    // Simpan sebentar supaya request yang masih membawa cookie lama ikut dapat hasil yang sama.
+    const drop = () => setTimeout(() => inflight.delete(refresh), 30_000);
+    p.then(drop, () => inflight.delete(refresh));
+  }
+  return p;
 }
 
 export async function saveTokens(tokens: TokenResponse) {

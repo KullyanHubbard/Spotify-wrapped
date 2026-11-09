@@ -1,0 +1,18 @@
+/* Token design Retro (web 90-an). Semua berawalan retro- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-retro-display: var(--font-retro-display-face);
+  --font-retro-body: var(--font-retro-body-face);
+  --font-retro-mono: var(--font-retro-mono-face);
+  --font-retro-lcd: var(--font-retro-lcd-face);
+  --color-retro-gray: #c0c0c0;
+  --color-retro-panel: #dfdfdf;
+  --color-retro-shade: #808080;
+  --color-retro-white: #ffffff;
+  --color-retro-black: #000000;
+  --color-retro-navy: #000080;
+  --color-retro-yellow: #ffff00;
+  --color-retro-green: #008000;
+  --color-retro-button: #22aa22;
+  --color-retro-lcd: #33ff33;
+  --color-retro-red: #e00000;
+}

@@ -1,0 +1,10 @@
+/* Token design Luxury. Semua berawalan luxury- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-luxury-display: var(--font-luxury-display-face);
+  --font-luxury-body: var(--font-luxury-body-face);
+  --color-luxury-ivory: #f6f5f2;
+  --color-luxury-ink: #111111;
+  --color-luxury-stone: #8a8780;
+  --color-luxury-line: #d9d6cf;
+  --color-luxury-mist: #e7e5e0;
+}

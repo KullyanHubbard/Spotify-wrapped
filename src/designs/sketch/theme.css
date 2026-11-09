@@ -1,0 +1,11 @@
+/* Token design Sketch. Semua berawalan sketch- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-sketch-display: var(--font-sketch-display-face);
+  --font-sketch-hand: var(--font-sketch-hand-face);
+  --color-sketch-ink: #2a2826;
+  --color-sketch-paper: #faf7f0;
+  --color-sketch-dot: #e4dfd3;
+  --color-sketch-gray: #e9e6df;
+  --color-sketch-faint: #8a867d;
+  --color-sketch-red: #ec4a3f;
+}

@@ -1,0 +1,11 @@
+/* Token design Neo-Brutalist. Semua berawalan neo- supaya tidak bentrok dengan design lain. */
+@theme inline {
+  --font-neo-display: var(--font-neo-display-face);
+  --font-neo-mono: var(--font-neo-mono-face);
+  --color-neo-ink: #0a0a0a;
+  --color-neo-paper: #f1efe7;
+  --color-neo-acid: #c6ff00;
+  --color-neo-signal: #ff3d00;
+  --color-neo-cobalt: #2241ff;
+  --color-neo-sun: #ffd600;
+}

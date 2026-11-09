@@ -1,39 +1,30 @@
 @import "tailwindcss";
+/* Token design wrapped (opsi). Design baru: tambah @import di sini. */
+@import "../designs/neo/theme.css";
+@import "../designs/sketch/theme.css";
+@import "../designs/retro/theme.css";
+@import "../designs/playful/theme.css";
+@import "../designs/cyberpunk/theme.css";
+@import "../designs/luxury/theme.css";
+@import "../designs/nota/theme.css";
 
+/* Newsprint: design utama app (landing, pilih design, kontrol viewer). */
 @theme inline {
-  --font-sans: var(--font-display);
-  --font-mono: var(--font-mono-face);
-  --color-paper: #f1efe7;
+  --font-masthead: var(--font-masthead-face);
+  --font-headline: var(--font-headline-face);
+  --font-body: var(--font-body-face);
   --color-ink: #0a0a0a;
-  --color-acid: #c6ff00;
-  --color-signal: #ff3d00;
-  --color-cobalt: #2241ff;
-  --color-sun: #ffd600;
-  --color-mint: #1ed760;
+  --color-newsprint: #f2ede3;
+  --color-faded: #5d5850;
+  --color-press-red: #a8201a;
 }
 
 html,
 body {
-  background: var(--color-paper);
+  background: var(--color-newsprint);
   color: var(--color-ink);
 }
 
 body {
-  font-family: var(--font-display), "Helvetica Neue", Helvetica, Arial, sans-serif;
-}
-
-/* Tombol brutalist: shadow keras, "ketekan" saat diklik. */
-.brut {
-  border: 2px solid var(--color-ink);
-  box-shadow: 4px 4px 0 var(--color-ink);
-  transition: transform 80ms, box-shadow 80ms;
-}
-.brut:active:not(:disabled) {
-  transform: translate(4px, 4px);
-  box-shadow: 0 0 0 var(--color-ink);
-}
-
-/* Tracking rapat di judul besar ikut memakan spasi antar kata. */
-.font-black {
-  word-spacing: 0.08em;
+  font-family: var(--font-body-face), Georgia, "Times New Roman", serif;
 }
