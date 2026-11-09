@@ -7,7 +7,11 @@ import { DESIGNS, type DesignId } from "@/designs";
 import { computeStats } from "@/lib/stats";
 import type { TimeRange, WrappedData } from "@/lib/types";
 
-const RANGE_SHORT_LABEL: Record<TimeRange, string> = { short_term: "4 minggu", medium_term: "6 bulan", long_term: "1 tahun" };
+const RANGE_SHORT_LABEL: Record<TimeRange, string> = {
+  short_term: "4 minggu",
+  medium_term: "6 bulan",
+  long_term: "1 tahun",
+};
 
 const ERROR_MESSAGES: Record<string, string> = {
   not_allowlisted:
@@ -17,11 +21,11 @@ const ERROR_MESSAGES: Record<string, string> = {
 };
 
 async function generateSlideBlob(node: HTMLElement): Promise<Blob> {
-  const w = node.offsetWidth;
-  const opts = { pixelRatio: 1080 / w, canvasWidth: w, canvasHeight: (w * 16) / 9 };
+  const width = node.offsetWidth;
+  const options = { pixelRatio: 1080 / width, canvasWidth: width, canvasHeight: (width * 16) / 9 };
   // Safari membutuhkan dua pass render agar gambar di SVG foreignObject ter-decode sempurna
-  await toBlob(node, opts);
-  const blob = await toBlob(node, opts);
+  await toBlob(node, options);
+  const blob = await toBlob(node, options);
   if (!blob) throw new Error("Render canvas gagal");
   return blob;
 }
@@ -40,11 +44,19 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") setIndex((i) => Math.max(0, i - 1));
+      else if (e.key === "ArrowRight") setIndex((i) => Math.min(slides.length - 1, i + 1));
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [slides.length]);
+
+  useEffect(() => {
     let cancelled = false;
     fetch(`/api/wrapped?range=${range}`)
       .then(async (res) => {
         if (res.status === 401) {
-          // Route Handler (bukan halaman), jadi butuh full navigation, bukan router.push.
           // eslint-disable-next-line @next/next/no-location-assign-relative-destination
           window.location.href = "/api/auth/login";
           return;
@@ -69,8 +81,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const step = (delta: number) => setIndex((i) => Math.min(slides.length - 1, Math.max(0, i + delta)));
 
   // Pre-render blob di background saat slide aktif atau data berganti.
-  // Ini krusial agar saat tombol Share ditekan di HP (terutama iOS Safari),
-  // navigator.share terpanggil instan (0ms delay) dan tidak dibatalkan oleh browser (NotAllowedError).
+  // Menjaga agar saat tombol Share ditekan di iOS Safari, navigator.share terpanggil instan tanpa NotAllowedError.
   useEffect(() => {
     let active = true;
     cachedBlobRef.current = null;
@@ -80,75 +91,56 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
       if (!node || !active) return;
       try {
         const blob = await generateSlideBlob(node);
-        if (active && blob) {
-          cachedBlobRef.current = { index, range, blob };
-        }
+        if (active) cachedBlobRef.current = { index, range, blob };
       } catch {
-        // Abaikan jika background pre-render belum siap
+        // Blob cache gagal, fallback ke render on-demand
       }
-    }, 350);
+    }, 450);
 
     return () => {
       active = false;
       clearTimeout(timer);
     };
-  }, [index, range, data]);
-
-  // Navigasi keyboard (panah kiri/kanan)
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft") setIndex((i) => Math.max(0, i - 1));
-      else if (e.key === "ArrowRight") setIndex((i) => Math.min(slides.length - 1, i + 1));
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [slides.length]);
-
-  function showHint(message: string) {
-    if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
-    setHint(message);
-    hintTimeoutRef.current = setTimeout(() => setHint(null), 4000);
-  }
+  }, [index, range, stats]);
 
   async function shareSlide() {
     const node = slideRef.current;
-    if (!node) return;
+    if (!node || exporting) return;
     setExporting(true);
 
     try {
-      let blob: Blob | null = null;
+      let blob: Blob;
       if (cachedBlobRef.current && cachedBlobRef.current.index === index && cachedBlobRef.current.range === range) {
         blob = cachedBlobRef.current.blob;
       } else {
         blob = await generateSlideBlob(node);
-        if (blob) {
-          cachedBlobRef.current = { index, range, blob };
-        }
       }
 
-      if (!blob) throw new Error("Render gagal");
-      const file = new File([blob], `wraped-${index + 1}.png`, { type: "image/png" });
+      const fileName = `wrapped-${range}-${index + 1}.png`;
+      const file = new File([blob], fileName, { type: "image/png" });
 
       const download = () => {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = file.name;
-        a.click();
-        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        showHint("Gambar tersimpan! Siap diunggah ke Instagram Story.");
+        const anchor = document.createElement("a");
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = fileName;
+        anchor.click();
+        setTimeout(() => URL.revokeObjectURL(anchor.href), 1000);
       };
 
-      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
-        showHint("Pilih Instagram Stories di menu bagikan");
+      if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
         try {
-          // PENTING: Hanya kirim files (tanpa text/url) agar target Instagram Stories muncul prioritas di iOS/Android
-          await navigator.share({ files: [file] });
-        } catch (e: unknown) {
-          // Pengguna menutup dialog share (AbortError) -> jangan paksa download
-          if (e instanceof Error && e.name === "AbortError") {
-            setHint(null);
+          if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+            download();
             return;
           }
+          // Hanya files (tanpa text/title), supaya Instagram Stories muncul sebagai target share di iOS/Android.
+          await navigator.share({ files: [file] });
+        } catch (err) {
+          if ((err as Error).name === "AbortError") return;
+
+          if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+          setHint("Buka via browser biasa (Safari/Chrome) untuk langsung share ke Story");
+          hintTimeoutRef.current = setTimeout(() => setHint(null), 5000);
           download();
         }
       } else {
@@ -163,26 +155,31 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
 
   if (error) {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center gap-5 p-6">
-        <span className="border-b border-ink pb-2 text-xs font-semibold uppercase tracking-[0.25em] text-press-red">Ralat</span>
-        <p className="font-headline text-3xl font-bold leading-tight">{error}</p>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => {
-              setError(null);
-              setData(null);
-              setAttempt((n) => n + 1);
-            }}
-            className="bg-ink px-6 py-3 font-headline text-lg font-bold text-newsprint transition-colors hover:bg-press-red"
-          >
-            Coba lagi
-          </button>
-          <a
-            href="/api/auth/login"
-            className="border border-ink px-6 py-3 font-headline text-lg font-bold transition-colors hover:bg-ink/5"
-          >
-            Login ulang →
-          </a>
+      <main className="mx-auto flex min-h-dvh max-w-lg flex-col justify-center gap-6 p-6 bg-pri text-sec">
+        <div className="nextec-hard-card border-2 border-red bg-pri p-6 sm:p-8 flex flex-col gap-4">
+          <div className="flex items-center justify-between font-mono text-xs text-red font-bold uppercase tracking-widest border-b border-red/30 pb-3">
+            <span>[ERR-500 {"//"} TELEMETRI GAGAL]</span>
+            <span className="h-2 w-2 bg-red animate-pulse" />
+          </div>
+          <p className="font-body text-sm sm:text-base leading-relaxed text-sec/90">{error}</p>
+          <div className="flex flex-wrap gap-3 pt-3 border-t border-sec/20">
+            <button
+              onClick={() => {
+                setError(null);
+                setData(null);
+                setAttempt((n) => n + 1);
+              }}
+              className="nextec-hard-button bg-red px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-[#fff5ef]"
+            >
+              Coba Lagi
+            </button>
+            <a
+              href="/api/auth/login"
+              className="nextec-hard-button bg-pri px-6 py-3 font-mono text-xs font-bold uppercase tracking-wider text-sec"
+            >
+              Login Ulang →
+            </a>
+          </div>
         </div>
       </main>
     );
@@ -190,8 +187,17 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
 
   if (!stats || !data) {
     return (
-      <main className="flex min-h-dvh items-center justify-center">
-        <p className="animate-pulse font-headline text-xl italic">Sedang naik cetak…</p>
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-pri text-sec gap-4 p-6">
+        <div className="flex items-center gap-2">
+          <span className="h-2.5 w-2.5 bg-red animate-ping" />
+          <span className="h-2.5 w-2.5 bg-sec animate-pulse" />
+        </div>
+        <p className="font-display text-4xl sm:text-5xl uppercase tracking-wider text-center">
+          Mengumpulkan Telemetri...
+        </p>
+        <p className="font-mono text-xs text-sec/60 uppercase tracking-widest text-center">
+          Sinkronisasi data Spotify Web API {"//"} Mohon tunggu
+        </p>
       </main>
     );
   }
@@ -200,19 +206,19 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const slideWidth = "min(calc(100vw - 2rem), calc((100dvh - 9rem) * 9 / 16))";
 
   return (
-    <main className="flex min-h-dvh flex-col items-center gap-4 bg-newsprint px-4 py-4">
-      <div className="flex gap-1" style={{ width: slideWidth }}>
+    <main className="flex min-h-dvh flex-col items-center gap-4 bg-pri text-sec px-4 py-4">
+      <div className="flex gap-1.5" style={{ width: slideWidth }}>
         {slides.map((_, i) => (
           <button
             key={i}
             aria-label={`Slide ${i + 1}`}
             onClick={() => setIndex(i)}
-            className={`h-1.5 flex-1 ${i <= index ? "bg-ink" : "bg-ink/15"}`}
+            className={`h-2 flex-1 transition-colors ${i <= index ? "bg-red" : "bg-sec/20"}`}
           />
         ))}
       </div>
 
-      <div className="relative border-4 border-double border-ink" style={{ width: slideWidth }}>
+      <div className="relative border-2 border-sec shadow-[8px_8px_0_var(--color-sec)]" style={{ width: slideWidth }}>
         <div ref={slideRef} className={`@container aspect-[9/16] w-full overflow-hidden ${fontClassName}`}>
           <Slide
             stats={stats}
@@ -231,25 +237,24 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
         <div
           role="status"
           style={{ width: slideWidth }}
-          className="border border-ink bg-ink/5 px-3 py-2 text-center text-xs font-semibold text-press-red"
+          className="border border-red bg-red/10 px-3 py-2 text-center font-mono text-xs text-red font-bold uppercase tracking-wider"
         >
           {hint}
         </div>
       )}
 
-      <div className="flex items-stretch gap-2 text-sm font-semibold" style={{ width: slideWidth }}>
+      <div className="flex items-stretch gap-2 font-mono text-xs font-bold uppercase" style={{ width: slideWidth }}>
         <select
           aria-label="Rentang waktu"
           value={range}
           onChange={(e) => {
-            // Kosongkan data supaya tampil loading, bukan slide rentang lama di bawah pilihan baru.
             setData(null);
             setRange(e.target.value as TimeRange);
           }}
-          className="min-w-0 flex-1 appearance-none border border-ink bg-newsprint px-3 py-2.5"
+          className="nextec-hard-button min-w-0 flex-1 appearance-none bg-pri text-sec px-3 py-2.5 cursor-pointer uppercase"
         >
           {(Object.keys(RANGE_SHORT_LABEL) as TimeRange[]).map((r) => (
-            <option key={r} value={r}>
+            <option key={r} value={r} className="bg-pri text-sec">
               {RANGE_SHORT_LABEL[r]}
             </option>
           ))}
@@ -258,15 +263,15 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
           onClick={shareSlide}
           disabled={exporting}
           title="Bagikan ke Instagram Story"
-          className="shrink-0 bg-ink px-4 py-2.5 text-newsprint transition-colors hover:bg-press-red disabled:opacity-50"
+          className="nextec-hard-button shrink-0 bg-red px-4 py-2.5 text-[#fff5ef] disabled:opacity-50"
         >
           {exporting ? "..." : "Share ↗"}
         </button>
-        <Link href="/wrapped" className="flex items-center border border-ink px-3 py-2.5 hover:bg-ink/5">
+        <Link href="/wrapped" className="nextec-hard-button flex items-center bg-pri text-sec px-3 py-2.5">
           Design
         </Link>
         <form action="/api/auth/logout" method="post" className="flex">
-          <button className="border border-ink px-3 py-2.5 hover:bg-ink/5">Keluar</button>
+          <button className="nextec-hard-button bg-pri text-sec px-3 py-2.5">Keluar</button>
         </form>
       </div>
     </main>

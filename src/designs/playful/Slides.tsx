@@ -60,7 +60,7 @@ function SlideFrame({
       {!dark && <Shapes quiet={quietShapes} />}
       <header className="relative flex items-center justify-between px-[6cqw] pt-[5cqw]">
         <span className="text-[5.5cqw] font-extrabold tracking-tight">
-          wraped<span className="text-playful-purple">.</span>
+          wrapped<span className="text-playful-purple">.</span>
         </span>
         <span className="text-[3.6cqw] font-medium opacity-70">{label}</span>
         <span className="rounded-full bg-playful-purple px-[3cqw] py-[1cqw] text-[3.4cqw] font-bold text-white">

@@ -31,7 +31,7 @@ export function appUrl(path: string) {
 export const cookieBase = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.SPOTIFY_REDIRECT_URI?.startsWith("https:") ?? false,
   path: "/",
 };
 
@@ -142,7 +142,7 @@ export async function getAccessToken(): Promise<string | null> {
   } catch (e) {
     // Hanya 400 (invalid_grant) yang berarti refresh token mati. Error jaringan/5xx dilempar supaya sesi tidak ikut terhapus.
     if (!(e instanceof SpotifyError && e.status === 400)) throw e;
-    await clearTokens();
+    // Cookie tidak dihapus: refresh paralel yang kalah balapan bisa menimpa cookie baru milik pemenang. Login ulang menimpanya.
     return null;
   }
 }

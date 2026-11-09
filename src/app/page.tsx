@@ -2,92 +2,150 @@ import { Suspense } from "react";
 import LoginError from "@/components/LoginError";
 import Masthead from "@/components/Masthead";
 
-const STORIES = [
+const SUMMARY_CARDS = [
   {
-    kicker: "Tangga Lagu",
-    title: "Siapa yang paling sering kamu putar?",
-    body: "Lima artis dan lima lagu teratas kamu, diurutkan langsung dari data Spotify.",
+    id: "artis-lagu",
+    title: "Top Artis & Lagu",
+    color: "bg-[#ffffff]",
+    desc: "Trek dan musisi yang paling sering menemani hari kamu.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#030303]" aria-hidden="true" shapeRendering="crispEdges">
+        <rect x="4" y="10" width="3" height="4" fill="currentColor" />
+        <rect x="9" y="6" width="3" height="12" fill="currentColor" />
+        <rect x="14" y="8" width="3" height="8" fill="currentColor" />
+        <rect x="19" y="11" width="3" height="2" fill="currentColor" />
+      </svg>
+    ),
   },
   {
-    kicker: "Rilisan",
-    title: "Album yang paling lama nempel",
-    body: "Dihitung dari album yang paling sering muncul di deretan lagu teratas kamu.",
+    id: "album-favorit",
+    title: "Album Favorit",
+    color: "bg-[#d86a60]",
+    desc: "Koleksi album yang paling banyak kamu putar berulang kali.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#030303]" aria-hidden="true" shapeRendering="crispEdges">
+        <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle cx="12" cy="12" r="3" fill="currentColor" />
+      </svg>
+    ),
   },
   {
-    kicker: "Jadwal",
-    title: "Kapan kamu paling banyak mendengar?",
-    body: "Jam puncak dari 50 lagu terakhir, lengkap dengan julukan pendengar yang cocok.",
+    id: "jam-dengar",
+    title: "Waktu Dengar",
+    color: "bg-[#6f98c8]",
+    desc: "Pola jam saat kamu paling aktif menikmati musik.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#030303]" aria-hidden="true" shapeRendering="crispEdges">
+        <rect x="5" y="5" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="11" y="8" width="2" height="5" fill="currentColor" />
+        <rect x="11" y="11" width="5" height="2" fill="currentColor" />
+      </svg>
+    ),
   },
   {
-    kicker: "Cetak",
-    title: "Siap terbit di Story",
-    body: "Setiap halaman bisa diekspor jadi gambar 9:16 dan langsung dibagikan.",
+    id: "format-story",
+    title: "Format Story",
+    color: "bg-[#3a9fa7]",
+    desc: "Ukuran pas dan tajam untuk dipajang di media sosial.",
+    icon: (
+      <svg viewBox="0 0 24 24" className="h-10 w-10 text-[#030303]" aria-hidden="true" shapeRendering="crispEdges">
+        <rect x="7" y="4" width="10" height="16" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect x="11" y="16" width="2" height="2" fill="currentColor" />
+      </svg>
+    ),
+  },
+];
+
+const ADVANTAGE_FEATURES = [
+  {
+    id: "aman",
+    title: "Aman & Privat",
+    body: "Login resmi langsung lewat Spotify. Akunmu tetap aman tanpa menyimpan password atau data rahasia apa pun.",
+  },
+  {
+    id: "tema",
+    title: "7 Pilihan Tema",
+    body: "Bebas pilih tema visual sesuai selera, mulai dari Neo-Brutalist, Retro, Cyberpunk, hingga Struk Belanja unik.",
+  },
+  {
+    id: "rasio",
+    title: "Pas untuk Story",
+    body: "Format visual sudah disesuaikan untuk layar HP sehingga langsung pas dan tajam saat diunggah ke Instagram Story.",
+  },
+  {
+    id: "bagikan",
+    title: "Sekali Klik Bagikan",
+    body: "Simpan hasil desain secara instan ke galeri atau langsung bagikan ke teman lewat media sosial pilihanmu.",
   },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-dvh bg-newsprint text-ink">
-      <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8">
-        <Masthead edition="Edisi Utama" />
+    <main className="min-h-dvh bg-pri text-sec">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">
+        <Masthead />
 
-        <section className="grid gap-8 border-b border-ink py-8 sm:py-10 lg:grid-cols-[1.9fr_1fr] lg:gap-0">
-          <div className="lg:border-r lg:border-ink lg:pr-10">
-            <p className="text-xs font-semibold uppercase tracking-[0.25em] text-press-red">Berita Utama</p>
-            <h1 className="mt-3 font-headline text-5xl font-black leading-[0.95] tracking-tight sm:text-7xl lg:text-[5.5rem]">
-              Musik Kamu Jadi <em className="font-bold">Berita Utama</em>.
+        <section className="relative border-b-2 border-sec/20 py-12 md:py-16">
+          <div className="mb-8 max-w-4xl">
+            <h1 className="font-display text-6xl sm:text-8xl md:text-9xl leading-[0.88] tracking-tight uppercase">
+              Musik Kamu <br />
+              <span className="text-red">Jadi Sorotan.</span>
             </h1>
-            <p className="mt-6 max-w-2xl font-headline text-xl italic leading-snug text-faded sm:text-2xl">
-              Rangkuman artis, lagu, album, dan jam dengar kamu, dicetak dalam format 9:16 dan siap terbit di Story.
-            </p>
           </div>
 
-          <aside className="flex flex-col gap-5 lg:pl-10">
-            <div>
-              <h2 className="border-b border-ink pb-2 font-headline text-2xl font-bold">Edisi Pribadi</h2>
-              <p className="mt-3 leading-relaxed">
-                Login sekali, pilih tata letak, lalu baca rangkuman musik kamu halaman demi halaman.
-              </p>
-            </div>
-            <Suspense>
-              <LoginError />
-            </Suspense>
-            <a
-              href="/api/auth/login"
-              className="group flex items-center justify-between bg-ink px-5 py-4 font-headline text-xl font-bold text-newsprint transition-colors hover:bg-press-red focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
-            >
-              Login dengan Spotify
-              <span aria-hidden className="transition-transform group-hover:translate-x-1">
-                →
-              </span>
-            </a>
-            <p className="text-xs leading-relaxed text-faded">
-              Izin yang diminta: top items + riwayat putar terakhir. Read-only, tidak ada yang diubah di akun kamu.
-            </p>
-          </aside>
-        </section>
-
-        <section className="grid gap-px border-b-4 border-double border-ink bg-ink bg-clip-padding sm:grid-cols-2 lg:grid-cols-4">
-          {STORIES.map((s, i) => (
-            <article key={s.title} className="bg-newsprint py-6 sm:px-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-press-red">{s.kicker}</p>
-              <h3 className="mt-2 font-headline text-2xl font-bold leading-tight">{s.title}</h3>
-              <p
-                className={`mt-3 text-[15px] leading-relaxed ${
-                  i === 0
-                    ? "first-letter:float-left first-letter:mr-2 first-letter:font-headline first-letter:text-5xl first-letter:font-black first-letter:leading-[0.85]"
-                    : ""
-                }`}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 my-8">
+            {SUMMARY_CARDS.map((card) => (
+              <div
+                key={card.id}
+                className={`nextec-hard-card-hero relative ${card.color} p-4 sm:p-5 flex flex-col justify-between h-[180px] sm:h-[220px] text-[#030303] cursor-default`}
               >
-                {s.body}
-              </p>
-            </article>
-          ))}
+                <div className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+                  <span>{card.title}</span>
+                </div>
+
+                <div className="flex justify-center my-auto">{card.icon}</div>
+
+                <p className="text-[11px] sm:text-xs font-body leading-snug text-[#030303]/85">
+                  {card.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-12 flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-2 border-sec/30 bg-sec/5 p-6 sm:p-8">
+            <div>
+              <h2 className="font-display text-3xl sm:text-4xl uppercase">Lihat Wrapped Kamu Sekarang</h2>
+            </div>
+
+            <div className="flex flex-col gap-3 shrink-0">
+              <Suspense>
+                <LoginError />
+              </Suspense>
+              <a
+                href="/api/auth/login"
+                className="nextec-hard-button inline-flex items-center justify-center gap-3 bg-red px-8 py-4 font-mono text-sm font-bold uppercase tracking-wider text-[#fff5ef]"
+              >
+                Masuk dengan Spotify <span>→</span>
+              </a>
+            </div>
+          </div>
         </section>
 
-        <footer className="flex flex-col gap-1 py-4 text-xs text-faded sm:flex-row sm:justify-between">
-          <span>Dicetak di browser kamu. Data dibaca langsung dari Spotify dan tidak disimpan di server.</span>
-          <span className="italic">Bukan produk resmi Spotify.</span>
+        <section className="py-12 border-b-2 border-sec/20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {ADVANTAGE_FEATURES.map((feature) => (
+              <div key={feature.id} className="border-2 border-sec/20 p-5 bg-sec/[0.02]">
+                <h3 className="font-display text-2xl uppercase">{feature.title}</h3>
+                <p className="font-body text-xs sm:text-sm text-sec/75 mt-2 leading-relaxed">
+                  {feature.body}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <footer className="py-8 text-center font-mono text-xs text-sec/60">
+          WRAPPED
         </footer>
       </div>
     </main>

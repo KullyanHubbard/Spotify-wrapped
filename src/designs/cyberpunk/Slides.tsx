@@ -58,7 +58,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
   return (
     <div className={`flex h-full w-full flex-col font-cyberpunk-display text-cyberpunk-text ${GRID}`}>
       <header className="flex items-center justify-between px-[6cqw] pt-[5.5cqw]">
-        <StatusTag>Wraped_OS: online</StatusTag>
+        <StatusTag>Wrapped_OS: online</StatusTag>
         <span className="font-cyberpunk-mono text-[2.8cqw] text-cyberpunk-green/80">
           {snake(label)} [{pad2(props.n)}/{pad2(props.total)}]
         </span>

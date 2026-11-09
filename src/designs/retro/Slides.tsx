@@ -41,7 +41,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
     <div className="flex h-full w-full flex-col bg-retro-gray font-retro-body text-retro-black">
       <div className="mx-auto h-[1.4cqw] w-[14cqw] bg-retro-red" />
       <header className="flex items-center justify-between px-[5cqw] pb-[3cqw] pt-[3cqw]">
-        <span className={`${YELLOW_TITLE} text-[6cqw] leading-none`}>Wraped</span>
+        <span className={`${YELLOW_TITLE} text-[6cqw] leading-none`}>Wrapped</span>
         <Lcd className="text-[4.4cqw] leading-none">
           {label} | {pad3(props.n)}/{pad3(props.total)}
         </Lcd>
@@ -359,7 +359,7 @@ function EmptySlide(props: SlideProps) {
   return (
     <SlideFrame props={props} label="error">
       <div className={`mx-auto mt-auto w-full bg-retro-gray ${RAISED}`}>
-        <p className="bg-retro-navy px-[3cqw] py-[1.5cqw] font-retro-mono text-[3.4cqw] font-bold text-retro-white">wraped.exe</p>
+        <p className="bg-retro-navy px-[3cqw] py-[1.5cqw] font-retro-mono text-[3.4cqw] font-bold text-retro-white">wrapped.exe</p>
         <div className="px-[4cqw] py-[5cqw] text-center">
           <p className="font-retro-display text-[7cqw] uppercase leading-tight">Belum cukup data</p>
           <p className="mt-[3cqw] text-[4cqw]">Dengerin lebih banyak dulu, atau ganti rentang waktunya.</p>

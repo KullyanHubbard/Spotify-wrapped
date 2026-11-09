@@ -6,10 +6,10 @@ Next.js (App Router, `cacheComponents: true`) + Tailwind v4. Teks UI berbahasa I
 
 ## Dua lapisan design, jangan dicampur
 
-1. **Newsprint = design utama app.** Halaman depan, halaman pilih design, kontrol di sekitar slide (Share, Design, Keluar), loading, dan error.
-   Lokasinya: `src/app/**` dan `src/components/**`. Token-nya ada di `src/app/globals.css` (`ink`, `newsprint`, `faded`, `press-red`, `font-masthead`, `font-headline`, `font-body`), dan font-nya di `src/app/layout.tsx`.
+1. **NEXTEC (Warm Cream) = design utama app.** Halaman depan, halaman pilih design, kontrol di sekitar slide (Share, Design, Keluar), loading, dan error.
+   Lokasinya: `src/app/**` dan `src/components/**`. Token-nya ada di `src/app/globals.css` (`pri: #fff5ef`, `sec: #030303`, `red: #fb2c36`, `card-*`, `font-display`, `font-body`, `font-mono`), dan font-nya di `src/app/layout.tsx`.
 2. **Design wrapped = opsi yang dipilih user.** Ini hanya isi slide 9:16. Setiap design punya satu folder: `src/designs/<id>/`.
-   Saat ini: `neo` (No. 01, Neo-Brutalist). Rencana berikutnya: `sketch` (No. 02).
+   Saat ini: 7 design (`neo`, `sketch`, `retro`, `playful`, `cyberpunk`, `luxury`, `nota`).
 
 ## Alur user
 
@@ -19,12 +19,12 @@ Next.js (App Router, `cacheComponents: true`) + Tailwind v4. Teks UI berbahasa I
 
 ```
 src/
-├── app/                      halaman + newsprint (design utama)
+├── app/                      halaman + shell NEXTEC (design utama)
 │   ├── page.tsx              halaman depan
 │   ├── wrapped/page.tsx      pilih design (preview pakai PREVIEW_SAMPLE)
 │   ├── wrapped/[design]/     validasi id → <WrappedViewer design={id} />
 │   └── api/                  auth, data Spotify, proxy gambar
-├── components/               komponen shell newsprint (Masthead, LoginError, WrappedViewer)
+├── components/               komponen shell NEXTEC (Masthead, LoginError, WrappedViewer)
 ├── designs/
 │   ├── types.ts              kontrak: SlideProps, Design
 │   ├── index.ts              DESIGNS (daftar & urutan design)
@@ -46,9 +46,9 @@ src/
 
 ## Aturan agar perubahan tidak melebar
 
-- **Mengubah satu design = hanya menyentuh `src/designs/<id>/`.** Jangan ubah design lain, shell newsprint, `lib/`, atau `types.ts` kecuali memang diminta.
-- **Mengubah shell newsprint = jangan menyentuh `src/designs/**`.**
-- **Token dan font design wajib berawalan id-nya:** `bg-sketch-paper`, `font-sketch-display`, variabel next/font `--font-sketch-*-face`. Semua `theme.css` dimuat global, jadi nama tanpa awalan akan bentrok. Jangan pakai token newsprint (`ink`, `newsprint`, ...) di dalam slide.
+- **Mengubah satu design = hanya menyentuh `src/designs/<id>/`.** Jangan ubah design lain, shell app, `lib/`, atau `types.ts` kecuali memang diminta.
+- **Mengubah shell app (NEXTEC) = jangan menyentuh `src/designs/**`.**
+- **Token dan font design wajib berawalan id-nya:** `bg-sketch-paper`, `font-sketch-display`, variabel next/font `--font-sketch-*-face`. Semua `theme.css` dimuat global, jadi nama tanpa awalan akan bentrok. Jangan pakai token shell (`pri`, `sec`, `red`, ...) di dalam slide.
 - **Font design dimuat di `fonts.ts` milik design itu,** bukan di `layout.tsx`. Class-nya dipasang otomatis di pembungkus slide lewat `fontClassName`.
 - **Slide hanya membaca `SlideProps`.** Jangan fetch data, jangan pakai hook state, dan **jangan panggil `new Date()`**: pakai `props.year`. Slide ikut di-prerender untuk preview, dan `new Date()` akan menggagalkan build.
 - **Ukuran di slide pakai unit `cqw`** (pembungkusnya `@container`), supaya preview kecil dan export 1080px tampil identik.

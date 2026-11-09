@@ -1,5 +1,4 @@
 @import "tailwindcss";
-/* Token design wrapped (opsi). Design baru: tambah @import di sini. */
 @import "../designs/neo/theme.css";
 @import "../designs/sketch/theme.css";
 @import "../designs/retro/theme.css";
@@ -8,23 +7,68 @@
 @import "../designs/luxury/theme.css";
 @import "../designs/nota/theme.css";
 
-/* Newsprint: design utama app (landing, pilih design, kontrol viewer). */
 @theme inline {
-  --font-masthead: var(--font-masthead-face);
-  --font-headline: var(--font-headline-face);
+  --font-display: var(--font-display-face);
   --font-body: var(--font-body-face);
-  --color-ink: #0a0a0a;
-  --color-newsprint: #f2ede3;
-  --color-faded: #5d5850;
-  --color-press-red: #a8201a;
+  --font-mono: var(--font-mono-face);
+  --color-pri: #fff5ef;
+  --color-sec: #030303;
+  --color-red: #fb2c36;
+  --color-card-cream: #ffffff;
+  --color-card-coral: #d86a60;
+  --color-card-slate: #6f98c8;
+  --color-card-teal: #3a9fa7;
 }
 
 html,
 body {
-  background: var(--color-newsprint);
-  color: var(--color-ink);
+  background-color: #fff5ef;
+  color: #030303;
 }
 
 body {
-  font-family: var(--font-body-face), Georgia, "Times New Roman", serif;
+  font-family: var(--font-body-face), Poppins, "Helvetica Neue", Arial, sans-serif;
+}
+
+.nextec-hard-button {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.18s, color 0.18s, opacity 0.18s;
+  transform: translate(0);
+  border: 2px solid var(--nextec-hard-border, #030303) !important;
+  box-shadow: 5px 5px 0 var(--nextec-hard-shadow, #030303) !important;
+  border-radius: 0 !important;
+}
+
+.nextec-hard-button:hover,
+.nextec-hard-button:focus-visible {
+  transform: translate(5px, 5px);
+  box-shadow: 0 0 0 var(--nextec-hard-shadow, #030303) !important;
+}
+
+.nextec-hard-button:disabled {
+  transform: translate(0);
+  box-shadow: 5px 5px 0 var(--nextec-hard-shadow, #030303) !important;
+}
+
+.nextec-hard-card {
+  transition: box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 2px solid var(--nextec-hard-border, #030303) !important;
+  box-shadow: 8px 8px 0 var(--nextec-hard-shadow, #030303) !important;
+  border-radius: 0 !important;
+}
+
+.nextec-hard-card:hover {
+  transform: translate(4px, 4px);
+  box-shadow: 4px 4px 0 var(--nextec-hard-shadow, #030303) !important;
+}
+
+.nextec-hard-card-hero {
+  transition: box-shadow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+  border: 2px solid #030303 !important;
+  box-shadow: 8px 8px 0 #030303 !important;
+  border-radius: 0 !important;
+}
+
+.nextec-hard-card-hero:hover {
+  transform: translate(6px, 6px);
+  box-shadow: 2px 2px 0 #030303 !important;
 }

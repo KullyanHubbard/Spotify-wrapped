@@ -48,7 +48,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
         <ZigZag />
         <div className="flex min-h-0 flex-1 flex-col bg-nota-paper px-[6cqw] py-[3cqw]">
           <header className="text-center">
-            <p className="text-[5.4cqw] font-bold tracking-[0.08em]">WRAPED MUSIC STORE</p>
+            <p className="text-[5.4cqw] font-bold tracking-[0.08em]">WRAPPED MUSIC STORE</p>
             <p className="text-[2.8cqw] text-nota-faded">Jl. Spotify No. 9/16 · Edisi {props.year}</p>
           </header>
           <Divider double />

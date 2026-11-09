@@ -5,44 +5,68 @@ import { PREVIEW_SAMPLE } from "@/designs/preview-sample";
 
 export default function DesignPickerPage() {
   const designs = Object.entries(DESIGNS) as [DesignId, (typeof DESIGNS)[DesignId]][];
-  return (
-    <main className="min-h-dvh bg-newsprint text-ink">
-      <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8">
-        <Masthead edition="Rubrik Tata Letak" />
 
-        <section className="border-b border-ink py-8 sm:py-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-press-red">Tata Letak</p>
-          <h1 className="mt-3 max-w-3xl font-headline text-4xl font-black leading-[0.95] tracking-tight sm:text-6xl">
-            Pilih gaya cetak rangkuman kamu.
-          </h1>
-          <p className="mt-4 max-w-2xl font-headline text-lg italic text-faded sm:text-xl">
-            Semua gaya memakai data yang sama, dan bisa diganti kapan saja dari halaman rangkuman.
-          </p>
+  return (
+    <main className="min-h-dvh bg-pri text-sec">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">
+        <Masthead />
+
+        <section className="border-b-2 border-sec/20 py-10 md:py-14">
+          <div className="max-w-2xl">
+            <h1 className="font-display text-5xl sm:text-7xl uppercase tracking-tight">
+              Pilih Format Desain.
+            </h1>
+            <p className="font-body text-xs sm:text-sm text-sec/75 mt-3 leading-relaxed">
+              Penasaran bagaimana kebiasaan musikmu terlihat dalam bentuk struk belanja unik, poster cyberpunk, atau majalah retro? Pilih salah satu tema di bawah untuk melihat kepribadian musikmu, dan kamu bebas berganti gaya kapan saja.
+            </p>
+          </div>
         </section>
 
-        <ul className="grid gap-6 py-8 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-3">
           {designs.map(([id, design], i) => (
-            <li key={id} className="border-2 border-ink p-1">
+            <li key={id}>
               <Link
                 href={`/wrapped/${id}`}
-                className="group flex h-full flex-col gap-3 border border-ink p-5 transition-colors hover:bg-ink hover:text-newsprint focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+                className="nextec-hard-card group flex h-full flex-col justify-between border-2 border-sec bg-pri p-5 sm:p-6 transition-colors hover:border-red"
               >
-                {/* Preview hidup: 3 slide pertama design ini dengan data contoh. */}
-                <div aria-hidden className="pointer-events-none mb-2 grid grid-cols-3 gap-2 border border-current bg-ink/5 p-2">
-                  {design.slides.slice(0, 3).map((Slide, n) => (
-                    <div key={n} className={`@container aspect-[9/16] overflow-hidden ${design.fontClassName}`}>
-                      <Slide {...PREVIEW_SAMPLE} n={n + 1} total={design.slides.length} />
-                    </div>
-                  ))}
+                <div>
+                  <div
+                    aria-hidden
+                    className="pointer-events-none mb-5 grid grid-cols-3 gap-2 border-2 border-sec/30 bg-sec/[0.03] p-2.5 transition-colors group-hover:border-red/50"
+                  >
+                    {design.slides.slice(0, 3).map((Slide, n) => (
+                      <div key={n} className={`@container aspect-[9/16] overflow-hidden border border-sec/20 ${design.fontClassName}`}>
+                        <Slide {...PREVIEW_SAMPLE} n={n + 1} total={design.slides.length} />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center justify-between font-mono text-xs text-sec/60 mb-2">
+                    <span className="font-bold text-red">[0{i + 1}]</span>
+                    <span className="uppercase tracking-widest text-[10px]">ID: {id}</span>
+                  </div>
+
+                  <h2 className="font-display text-3xl sm:text-4xl uppercase tracking-wide group-hover:text-red transition-colors">
+                    {design.name}
+                  </h2>
+
+                  <p className="font-body text-xs sm:text-sm text-sec/70 mt-2 leading-relaxed">
+                    {design.description}
+                  </p>
                 </div>
-                <span className="text-[11px] uppercase tracking-[0.25em] opacity-70">No. {String(i + 1).padStart(2, "0")}</span>
-                <span className="font-headline text-3xl font-bold leading-tight">{design.name}</span>
-                <span className="leading-relaxed">{design.description}</span>
-                <span className="mt-auto pt-2 text-sm font-semibold underline underline-offset-4">Baca edisi ini →</span>
+
+                <div className="mt-6 pt-4 border-t border-sec/20 flex items-center justify-between font-mono text-xs uppercase font-bold tracking-wider">
+                  <span className="text-sec group-hover:text-red transition-colors">Pilih Gaya Ini</span>
+                  <span className="text-red transition-transform group-hover:translate-x-1">→</span>
+                </div>
               </Link>
             </li>
           ))}
         </ul>
+
+        <footer className="py-8 border-t-2 border-sec/20 text-center font-mono text-xs text-sec/60">
+          WRAPPED · SINCE 2026
+        </footer>
       </div>
     </main>
   );

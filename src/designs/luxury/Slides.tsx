@@ -32,7 +32,7 @@ function SlideFrame({ props, dark = false, children }: { props: SlideProps; dark
       className={`flex h-full w-full flex-col font-luxury-body ${dark ? "bg-luxury-ink text-luxury-ivory" : "bg-luxury-ivory text-luxury-ink"}`}
     >
       <header className="flex items-center justify-between px-[8cqw] pt-[8cqw]">
-        <span className={LABEL}>Wraped</span>
+        <span className={LABEL}>Wrapped</span>
         <span className={`${LABEL} text-luxury-stone`}>N° {pad2(props.n)}</span>
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col px-[8cqw] py-[7cqw]">{children}</div>

@@ -26,7 +26,7 @@ function SlideFrame({
   return (
     <div className={`flex h-full w-full flex-col font-neo-display [&_.font-black]:[word-spacing:0.08em] ${className}`}>
       <header className={`flex border-0 border-b-[0.7cqw] border-current font-neo-mono text-[3.1cqw] uppercase`}>
-        <span className="px-[4cqw] py-[2.6cqw] font-bold">Wraped®</span>
+        <span className="px-[4cqw] py-[2.6cqw] font-bold">Wrapped®</span>
         <span className="flex-1 border-l-[0.7cqw] border-current px-[4cqw] py-[2.6cqw]">{label}</span>
         <span className="border-l-[0.7cqw] border-current px-[4cqw] py-[2.6cqw]">
           {pad2(props.n)}/{pad2(props.total)}

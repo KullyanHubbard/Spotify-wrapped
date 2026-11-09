@@ -1,21 +1,20 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Source_Serif_4, UnifrakturMaguntia } from "next/font/google";
+import { Jersey_20, Poppins, Space_Mono } from "next/font/google";
 import "./globals.css";
 
-// Newsprint: design utama app. Font design wrapped di-load di folder design masing-masing.
-const masthead = UnifrakturMaguntia({ variable: "--font-masthead-face", subsets: ["latin"], weight: "400" });
-const headline = Playfair_Display({ variable: "--font-headline-face", subsets: ["latin"], style: ["normal", "italic"] });
-const body = Source_Serif_4({ variable: "--font-body-face", subsets: ["latin"], style: ["normal", "italic"] });
+const display = Jersey_20({ variable: "--font-display-face", subsets: ["latin"], weight: "400" });
+const body = Poppins({ variable: "--font-body-face", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const mono = Space_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "Wraped",
-  description: "Rangkuman musik Spotify kamu, siap di-share ke Instagram Story.",
+  title: "Wrapped | Spotify Wrapped Kapan Saja",
+  description: "Rangkuman musik Spotify kamu siap diekspor ke Instagram Story.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" className={`${masthead.variable} ${headline.variable} ${body.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="id" className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col bg-[#fff5ef] text-[#030303]">{children}</body>
     </html>
   );
 }

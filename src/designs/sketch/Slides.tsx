@@ -21,7 +21,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
     <div className={`flex h-full w-full flex-col font-sketch-hand text-sketch-ink ${DOTTED_PAPER}`}>
       <header className="flex items-center justify-between px-[6cqw] pt-[5cqw]">
         <span className="font-sketch-display text-[5.5cqw] font-bold">
-          wraped<span className="text-sketch-red">.</span>
+          wrapped<span className="text-sketch-red">.</span>
         </span>
         <span className="text-[4cqw] text-sketch-faint">{label}</span>
         <span className={`${CIRCLE} flex size-[11cqw] items-center justify-center text-[3.6cqw]`}>
