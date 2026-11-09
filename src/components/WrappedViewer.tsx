@@ -16,6 +16,16 @@ const ERROR_MESSAGES: Record<string, string> = {
   spotify_error: "Spotify lagi error. Coba lagi nanti.",
 };
 
+async function generateSlideBlob(node: HTMLElement): Promise<Blob> {
+  const w = node.offsetWidth;
+  const opts = { pixelRatio: 1080 / w, canvasWidth: w, canvasHeight: (w * 16) / 9 };
+  // Safari membutuhkan dua pass render agar gambar di SVG foreignObject ter-decode sempurna
+  await toBlob(node, opts);
+  const blob = await toBlob(node, opts);
+  if (!blob) throw new Error("Render canvas gagal");
+  return blob;
+}
+
 export default function WrappedViewer({ design }: { design: DesignId }) {
   const { slides, fontClassName } = DESIGNS[design];
   const [range, setRange] = useState<TimeRange>("medium_term");
@@ -23,7 +33,10 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const [error, setError] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [hint, setHint] = useState<string | null>(null);
   const slideRef = useRef<HTMLDivElement>(null);
+  const cachedBlobRef = useRef<{ index: number; range: TimeRange; blob: Blob } | null>(null);
+  const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,17 +67,65 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
 
   const step = (delta: number) => setIndex((i) => Math.min(slides.length - 1, Math.max(0, i + delta)));
 
+  // Pre-render blob di background saat slide aktif atau data berganti.
+  // Ini krusial agar saat tombol Share ditekan di HP (terutama iOS Safari),
+  // navigator.share terpanggil instan (0ms delay) dan tidak dibatalkan oleh browser (NotAllowedError).
+  useEffect(() => {
+    let active = true;
+    cachedBlobRef.current = null;
+
+    const timer = setTimeout(async () => {
+      const node = slideRef.current;
+      if (!node || !active) return;
+      try {
+        const blob = await generateSlideBlob(node);
+        if (active && blob) {
+          cachedBlobRef.current = { index, range, blob };
+        }
+      } catch {
+        // Abaikan jika background pre-render belum siap
+      }
+    }, 350);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [index, range, data]);
+
+  // Navigasi keyboard (panah kiri/kanan)
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") setIndex((i) => Math.max(0, i - 1));
+      else if (e.key === "ArrowRight") setIndex((i) => Math.min(slides.length - 1, i + 1));
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [slides.length]);
+
+  function showHint(message: string) {
+    if (hintTimeoutRef.current) clearTimeout(hintTimeoutRef.current);
+    setHint(message);
+    hintTimeoutRef.current = setTimeout(() => setHint(null), 4000);
+  }
+
   async function shareSlide() {
     const node = slideRef.current;
     if (!node) return;
     setExporting(true);
+
     try {
-      const w = node.offsetWidth;
-      const opts = { pixelRatio: 1080 / w, canvasWidth: w, canvasHeight: (w * 16) / 9 };
-      // Safari sering melewatkan gambar di render pertama, jadi render dua kali dan pakai hasil kedua.
-      await toBlob(node, opts);
-      const blob = await toBlob(node, opts);
-      if (!blob) throw new Error("render gagal");
+      let blob: Blob | null = null;
+      if (cachedBlobRef.current && cachedBlobRef.current.index === index && cachedBlobRef.current.range === range) {
+        blob = cachedBlobRef.current.blob;
+      } else {
+        blob = await generateSlideBlob(node);
+        if (blob) {
+          cachedBlobRef.current = { index, range, blob };
+        }
+      }
+
+      if (!blob) throw new Error("Render gagal");
       const file = new File([blob], `wraped-${index + 1}.png`, { type: "image/png" });
 
       const download = () => {
@@ -73,14 +134,22 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
         a.download = file.name;
         a.click();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        showHint("Gambar tersimpan! Siap diunggah ke Instagram Story.");
       };
 
-      if (navigator.canShare?.({ files: [file] })) {
-        // Safari menolak share (NotAllowedError) kalau render terlalu lama sejak tap; fallback ke download.
-        await navigator.share({ files: [file] }).catch((e: Error) => {
-          if (e.name !== "NotAllowedError") throw e;
+      if (typeof navigator !== "undefined" && navigator.canShare?.({ files: [file] })) {
+        showHint("Pilih Instagram Stories di menu bagikan");
+        try {
+          // PENTING: Hanya kirim files (tanpa text/url) agar target Instagram Stories muncul prioritas di iOS/Android
+          await navigator.share({ files: [file] });
+        } catch (e: unknown) {
+          // Pengguna menutup dialog share (AbortError) -> jangan paksa download
+          if (e instanceof Error && e.name === "AbortError") {
+            setHint(null);
+            return;
+          }
           download();
-        });
+        }
       } else {
         download();
       }
@@ -145,6 +214,16 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
         <button aria-label="Berikutnya" className="absolute inset-y-0 right-0 w-2/3" onClick={() => step(1)} />
       </div>
 
+      {hint && (
+        <div
+          role="status"
+          style={{ width: slideWidth }}
+          className="border border-ink bg-ink/5 px-3 py-2 text-center text-xs font-semibold text-press-red"
+        >
+          {hint}
+        </div>
+      )}
+
       <div className="flex items-stretch gap-2 text-sm font-semibold" style={{ width: slideWidth }}>
         <select
           aria-label="Rentang waktu"
@@ -158,7 +237,12 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
             </option>
           ))}
         </select>
-        <button onClick={shareSlide} disabled={exporting} className="shrink-0 bg-ink px-4 py-2.5 text-newsprint transition-colors hover:bg-press-red disabled:opacity-50">
+        <button
+          onClick={shareSlide}
+          disabled={exporting}
+          title="Bagikan ke Instagram Story"
+          className="shrink-0 bg-ink px-4 py-2.5 text-newsprint transition-colors hover:bg-press-red disabled:opacity-50"
+        >
           {exporting ? "..." : "Share ↗"}
         </button>
         <Link href="/wrapped" className="flex items-center border border-ink px-3 py-2.5 hover:bg-ink/5">
