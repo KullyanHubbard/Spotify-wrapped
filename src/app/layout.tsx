@@ -7,7 +7,7 @@ const body = Poppins({ variable: "--font-body-face", subsets: ["latin"], weight:
 const mono = Space_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "Kilasara Studio | Online Photo Studio, Wrapped & Katalog Template",
+  title: "Kilasara Studio | Online Photo Studio & Music Wrapped",
   description:
     "Platform kreatif digital untuk mengabadikan Kilas Foto (Online Photobooth & Frame) dan Aksara Cerita (Spotify Wrapped & Data Storytelling) siap unggah ke Story.",
 };

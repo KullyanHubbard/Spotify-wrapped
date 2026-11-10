@@ -1,5 +1,6 @@
 import Masthead from "@/components/Masthead";
 import ModePicker from "@/components/ModePicker";
+import { DESIGNS } from "@/designs";
 
 export default function MulaiPage() {
   return (
@@ -13,15 +14,15 @@ export default function MulaiPage() {
               PILAR 02 // KILASARA WRAPPED STUDIO
             </div>
             <h1 className="font-display text-5xl sm:text-7xl uppercase tracking-tight">
-              Pilih Mode Wrapped.
+              Pilih Platform Wrapped.
             </h1>
             <p className="mt-3 font-body text-xs sm:text-sm text-sec/75 leading-relaxed">
-              Tentukan bagaimana data Wrapped kamu dihitung sebelum memilih format desain visual. Kamu bebas berganti mode kapan saja.
+              Pilih platform asal datamu, lalu tentukan sumber datanya sebelum memilih desain visual. Kamu bebas berganti mode kapan saja.
             </p>
           </div>
         </section>
 
-        <ModePicker />
+        <ModePicker themeCount={Object.keys(DESIGNS).length} />
 
         <footer className="py-8 border-t-2 border-sec/20 text-center font-mono text-xs text-sec/60">
           KILASARA STUDIO · SINCE 2026

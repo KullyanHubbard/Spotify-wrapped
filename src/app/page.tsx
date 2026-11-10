@@ -2,8 +2,12 @@ import { Suspense } from "react";
 import Link from "next/link";
 import LoginError from "@/components/LoginError";
 import Masthead from "@/components/Masthead";
-import PhotoFramePreview from "@/components/PhotoFramePreview";
-import { DEMO_SLOT_PHOTOS, PHOTO_TEMPLATES } from "@/lib/photo-templates";
+import { DESIGNS } from "@/designs";
+import { PHOTO_TEMPLATES } from "@/lib/photo-templates";
+import { PLATFORM_STATUS_LABEL, WRAPPED_PLATFORMS } from "@/lib/wrapped-platforms";
+
+const PHOTO_TEMPLATE_COUNT = PHOTO_TEMPLATES.length;
+const WRAPPED_THEME_COUNT = Object.keys(DESIGNS).length;
 
 const SUMMARY_CARDS = [
   {
@@ -34,8 +38,8 @@ const SUMMARY_CARDS = [
     ),
   },
   {
-    id: "katalog-template",
-    title: "31+ Template",
+    id: "koleksi-desain",
+    title: `${PHOTO_TEMPLATE_COUNT} Frame & ${WRAPPED_THEME_COUNT} Tema`,
     color: "bg-[#6f98c8]",
     desc: "Koleksi frame 4-cuts, struk kasir, koran retro, cyberpunk, hingga sampul majalah.",
     icon: (
@@ -85,8 +89,6 @@ const ADVANTAGE_FEATURES = [
 ];
 
 export default function Home() {
-  const featuredPhotoTemplates = PHOTO_TEMPLATES.slice(0, 4);
-
   return (
     <main className="min-h-dvh bg-pri text-sec">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 md:px-8">
@@ -103,7 +105,7 @@ export default function Home() {
               <span className="text-red">Jadi Sorotan.</span>
             </h1>
             <p className="mt-4 max-w-2xl font-body text-sm leading-relaxed text-sec/80 sm:text-base">
-              Satu rumah kreatif untuk mengabadikan potret momenmu di <strong>Kilasara Snap (Online Photo Studio)</strong> dan merangkum cerita datamu di <strong>Kilasara Wrapped</strong> dengan puluhan template estetik.
+              Satu rumah kreatif untuk mengabadikan potret momenmu di <strong>Kilasara Snap (Online Photo Studio)</strong> dan merangkum cerita datamu di <strong>Kilasara Wrapped</strong> dengan berbagai pilihan template estetik.
             </p>
           </div>
 
@@ -133,7 +135,7 @@ export default function Home() {
               <div>
                 <div className="mb-3 flex items-center justify-between font-mono text-xs font-bold uppercase">
                   <span className="bg-red px-2 py-0.5 text-[#fff5ef]">PILAR 01 // KILASARA SNAP</span>
-                  <span className="text-sec/60">24 TEMPLATE FRAME</span>
+                  <span className="text-sec/60">{PHOTO_TEMPLATE_COUNT} TEMPLATE FRAME</span>
                 </div>
                 <h2 className="font-display text-4xl uppercase tracking-wide sm:text-5xl">
                   Online Photo Studio
@@ -150,12 +152,6 @@ export default function Home() {
                 >
                   Buka Snap Studio <span>→</span>
                 </Link>
-                <Link
-                  href="/templates"
-                  className="nextec-hard-button inline-flex items-center justify-center gap-2 bg-pri px-5 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-sec"
-                >
-                  Lihat Frame Foto
-                </Link>
               </div>
             </div>
 
@@ -164,7 +160,7 @@ export default function Home() {
               <div>
                 <div className="mb-3 flex items-center justify-between font-mono text-xs font-bold uppercase">
                   <span className="bg-sec px-2 py-0.5 text-pri">PILAR 02 // KILASARA WRAPPED</span>
-                  <span className="text-sec/60">7 TEMA SLIDE</span>
+                  <span className="text-sec/60">{WRAPPED_THEME_COUNT} TEMA SLIDE</span>
                 </div>
                 <h2 className="font-display text-4xl uppercase tracking-wide sm:text-5xl">
                   Music &amp; Data Wrapped
@@ -172,6 +168,19 @@ export default function Home() {
                 <p className="mt-3 font-body text-xs leading-relaxed text-sec/75 sm:text-sm">
                   Ubah riwayat dengar Spotify kamu menjadi 9-10 slide cerita visual kapan saja tanpa harus menunggu akhir tahun. Mendukung login instan maupun perhitungan total menit asli dari file riwayat.
                 </p>
+                <ul aria-label="Platform Wrapped" className="mt-4 flex flex-wrap gap-2">
+                  {WRAPPED_PLATFORMS.map((platform) => (
+                    <li
+                      key={platform.id}
+                      className={`border-2 border-sec px-2 py-0.5 font-mono text-[11px] font-bold uppercase ${
+                        platform.status === "ready" ? "bg-sec text-pri" : "bg-pri text-sec"
+                      }`}
+                    >
+                      {platform.shortName}
+                      {platform.status === "ready" ? "" : ` · ${PLATFORM_STATUS_LABEL[platform.status]}`}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className="mt-6 flex flex-col gap-3 border-t border-sec/20 pt-5">
@@ -179,75 +188,21 @@ export default function Home() {
                   <LoginError />
                 </Suspense>
                 <div className="flex flex-wrap gap-3">
-                  <a
-                    href="/api/auth/login"
+                  <Link
+                    href="/mulai"
                     className="nextec-hard-button inline-flex items-center justify-center gap-2 bg-red px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-[#fff5ef]"
                   >
-                    Masuk dengan Spotify <span>→</span>
-                  </a>
+                    Pilih Platform Wrapped <span aria-hidden="true">→</span>
+                  </Link>
                   <Link
                     href="/wrapped"
                     className="nextec-hard-button inline-flex items-center justify-center gap-2 bg-pri px-5 py-3.5 font-mono text-xs font-bold uppercase tracking-wider text-sec"
                   >
-                    Pratinjau 7 Tema
+                    Pratinjau {WRAPPED_THEME_COUNT} Tema
                   </Link>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        {/* FEATURED PHOTO TEMPLATES SHOWCASE */}
-        <section className="border-b-2 border-sec/20 py-12">
-          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-            <div>
-              <span className="font-mono text-xs font-bold uppercase tracking-widest text-red">
-                [PILAR 03 // KILASARA GALERI]
-              </span>
-              <h2 className="font-display text-4xl uppercase sm:text-6xl">
-                Sorotan Template Frame
-              </h2>
-            </div>
-            <Link
-              href="/templates"
-              className="nextec-hard-button self-start bg-pri px-5 py-2.5 font-mono text-xs font-bold uppercase text-sec"
-            >
-              Lihat Semua 31+ Template →
-            </Link>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredPhotoTemplates.map((tpl) => (
-              <Link
-                key={tpl.id}
-                href={`/photo?template=${tpl.id}`}
-                className="nextec-hard-card group flex flex-col justify-between border-2 border-sec bg-pri p-4 transition-colors hover:border-red"
-              >
-                <div>
-                  <div className="pointer-events-none mx-auto mb-4 w-full max-w-[200px] border border-sec/30 bg-sec/5 p-2">
-                    <div className="@container aspect-[9/16] w-full overflow-hidden">
-                      <PhotoFramePreview
-                        template={tpl}
-                        photos={DEMO_SLOT_PHOTOS}
-                        dateLabel="2026"
-                        hideInteractiveUI
-                      />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between font-mono text-[10px] font-bold uppercase text-sec/60">
-                    <span className="text-red">{tpl.badge}</span>
-                    <span>{tpl.slots} SLOT</span>
-                  </div>
-                  <h3 className="mt-1 font-display text-2xl uppercase group-hover:text-red">
-                    {tpl.name}
-                  </h3>
-                </div>
-
-                <div className="mt-4 border-t border-sec/20 pt-3 font-mono text-xs font-bold uppercase text-red">
-                  Coba Frame Ini →
-                </div>
-              </Link>
-            ))}
           </div>
         </section>
 

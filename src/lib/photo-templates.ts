@@ -772,11 +772,6 @@ export const PHOTO_TEMPLATES: PhotoTemplateConfig[] = [
   },
 ];
 
-export function getPhotoTemplateById(id: string | null | undefined): PhotoTemplateConfig {
-  if (!id) return PHOTO_TEMPLATES[0];
-  return PHOTO_TEMPLATES.find((t) => t.id === id) ?? PHOTO_TEMPLATES[0];
-}
-
 export function getPhotoFilterById(id: PhotoFilterId): PhotoFilterConfig {
   return PHOTO_FILTERS.find((f) => f.id === id) ?? PHOTO_FILTERS[0];
 }

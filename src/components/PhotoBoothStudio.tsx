@@ -1,13 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { toBlob } from "html-to-image";
 import PhotoFramePreview from "@/components/PhotoFramePreview";
 import {
   DEMO_SLOT_PHOTOS,
-  getPhotoTemplateById,
   PHOTO_CATEGORIES,
   PHOTO_FILTERS,
   PHOTO_TEMPLATES,
@@ -45,12 +42,7 @@ function readFileAsDataUrl(file: File): Promise<string> {
 }
 
 export default function PhotoBoothStudio() {
-  const searchParams = useSearchParams();
-  const initialTemplateId = searchParams.get("template");
-  const initialTemplate = useMemo(
-    () => getPhotoTemplateById(initialTemplateId),
-    [initialTemplateId]
-  );
+  const initialTemplate = PHOTO_TEMPLATES[0];
 
   const [selectedTemplate, setSelectedTemplate] = useState<PhotoTemplateConfig>(initialTemplate);
   const [selectedCategory, setSelectedCategory] = useState<PhotoCategoryId | "all">("all");
@@ -633,23 +625,15 @@ export default function PhotoBoothStudio() {
             </div>
           </div>
 
-          {/* 2. Template Selector (24 Templates) */}
+          {/* 2. Template Selector */}
           <div className="nextec-hard-card border-2 border-sec bg-pri p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-sec/20 pb-4">
-              <div>
-                <span className="font-mono text-xs font-bold uppercase tracking-widest text-red">
-                  [LANGKAH 02 // PILIH FRAME STUDIO]
-                </span>
-                <h2 className="font-display text-3xl uppercase tracking-wide sm:text-4xl">
-                  Koleksi Template ({PHOTO_TEMPLATES.length} Desain)
-                </h2>
-              </div>
-              <Link
-                href="/templates"
-                className="font-mono text-xs font-bold uppercase text-red underline hover:text-sec"
-              >
-                Lihat Katalog Penuh →
-              </Link>
+            <div className="border-b-2 border-sec/20 pb-4">
+              <span className="font-mono text-xs font-bold uppercase tracking-widest text-red">
+                [LANGKAH 02 // PILIH FRAME STUDIO]
+              </span>
+              <h2 className="font-display text-3xl uppercase tracking-wide sm:text-4xl">
+                Koleksi Template ({PHOTO_TEMPLATES.length} Desain)
+              </h2>
             </div>
 
             {/* Category Pills */}
