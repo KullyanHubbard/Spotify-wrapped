@@ -11,6 +11,7 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
 
 function SlideFrame({
   props,
@@ -34,7 +35,7 @@ function SlideFrame({
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col p-[5.5cqw]">{children}</div>
       <footer className="flex justify-between border-t-[0.7cqw] border-current px-[4cqw] py-[2.6cqw] font-neo-mono text-[3.1cqw] uppercase">
-        <span>{RANGE_LABEL[props.range]}</span>
+        <span>{rangeText(props)}</span>
         <span>Spotify Stats</span>
       </footer>
     </div>
@@ -76,7 +77,7 @@ function IntroSlide(props: SlideProps) {
         kamu<span className="text-neo-signal">.</span>
       </h1>
       <div className={`mt-[7cqw] grid grid-cols-[1fr_auto] ${BORDER} bg-neo-paper shadow-[2cqw_2cqw_0_currentColor]`}>
-        <span className="px-[3.5cqw] py-[3cqw] text-[5cqw] font-bold">Rangkuman {RANGE_LABEL[props.range]}</span>
+        <span className="px-[3.5cqw] py-[3cqw] text-[5cqw] font-bold">Rangkuman {rangeText(props)}</span>
         <span className="flex items-center border-l-[0.7cqw] border-current px-[4cqw] text-[8cqw] font-black">↘</span>
       </div>
     </SlideFrame>
@@ -190,7 +191,7 @@ function TopAlbumSlide(props: SlideProps) {
         </div>
         <div className={`${BORDER} bg-neo-ink px-[3cqw] py-[2cqw] text-center text-neo-acid`}>
           <p className="text-[11cqw] font-black leading-none tracking-[-0.035em]">{a.count}</p>
-          <p className="font-neo-mono text-[2.6cqw] uppercase">/{props.stats.trackCount} lagu</p>
+          <p className="font-neo-mono text-[2.6cqw] uppercase">{props.stats.source === "file" ? "putar" : `/${props.stats.trackCount} lagu`}</p>
         </div>
       </div>
     </SlideFrame>
@@ -198,7 +199,7 @@ function TopAlbumSlide(props: SlideProps) {
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   const max = Math.max(1, ...hours);
   return (
     <SlideFrame props={props} label="Jam dengar" className="bg-neo-ink text-neo-paper">
@@ -229,7 +230,9 @@ function ListeningClockSlide(props: SlideProps) {
           <span>23</span>
         </div>
         <p className="mt-[4cqw] font-neo-mono text-[3cqw] uppercase opacity-70">
-          Dari {recentCount} lagu terakhir · {recentMinutes} menit
+          {source === "file"
+            ? `Dari ${recentCount} putar sepanjang ${props.year} · ${recentMinutes} menit`
+            : `Dari ${recentCount} lagu terakhir · ${recentMinutes} menit`}
         </p>
       </div>
     </SlideFrame>
@@ -238,12 +241,19 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   const cells: { value: string; label: string; accent?: boolean }[] = [];
-  if (props.range !== "long_term") {
+  if (isFile ? s.loyalTotal > 0 : props.range !== "long_term") {
     cells.push({ value: `${s.loyalCount}/${s.loyalTotal}`, label: "lagu top 10 kamu juga favorit jangka panjang", accent: true });
   }
-  cells.push({ value: String(s.uniqueArtistsInTop), label: `artis berbeda di top ${s.trackCount} lagu` });
-  cells.push({ value: String(s.recentMinutes), label: `menit dari ${s.recentCount} lagu terakhir` });
+  cells.push({
+    value: String(s.uniqueArtistsInTop),
+    label: isFile ? `artis berbeda sepanjang ${props.year}` : `artis berbeda di top ${s.trackCount} lagu`,
+  });
+  cells.push({
+    value: String(s.recentMinutes),
+    label: isFile ? `menit dari ${s.recentCount} putar sepanjang ${props.year}` : `menit dari ${s.recentCount} lagu terakhir`,
+  });
 
   return (
     <SlideFrame props={props} label="Angka" className="bg-neo-paper text-neo-ink">
@@ -331,6 +341,49 @@ function EmptySlide(props: SlideProps) {
     <SlideFrame props={props} label="Kosong" className="bg-neo-paper text-neo-ink">
       <h2 className="mt-auto text-[12cqw] font-black uppercase leading-[0.9] tracking-[-0.035em]">Belum cukup data.</h2>
       <p className="mt-[4cqw] font-neo-mono text-[3.6cqw] uppercase">Dengerin lebih banyak dulu, atau ganti rentang waktunya.</p>
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props} label="Total Menit" className="bg-neo-paper text-neo-ink">
+      <Tag>Riwayat Dengar {props.year}</Tag>
+      <div className="mt-[3cqw]">
+        <p className="font-neo-mono text-[3.4cqw] uppercase">Total waktu dengar asli:</p>
+        <p className="mt-[1cqw] text-[17cqw] font-black uppercase leading-[0.85] tracking-[-0.05em] text-neo-signal">
+          {h.totalMinutes.toLocaleString("id-ID")}
+        </p>
+        <p className="font-neo-mono text-[4.5cqw] font-bold uppercase tracking-[0.1em]">Menit</p>
+      </div>
+
+      <div className="mt-auto space-y-[2.5cqw]">
+        {h.topTrack && (
+          <div className={`${BORDER} bg-neo-sun p-[3.5cqw] shadow-[2cqw_2cqw_0_currentColor]`}>
+            <p className="font-neo-mono text-[2.8cqw] uppercase text-neo-ink/80">Lagu paling sering diputar</p>
+            <p className="mt-[1cqw] line-clamp-1 text-[4.8cqw] font-black uppercase leading-tight">{h.topTrack.name}</p>
+            <p className="mt-[0.5cqw] line-clamp-1 font-neo-mono text-[3.2cqw] text-neo-ink/90">
+              {h.topTrack.artist} ({h.topTrack.plays} kali diputar)
+            </p>
+          </div>
+        )}
+        {h.busiestDay && (
+          <div className={`${BORDER} bg-neo-paper p-[3.5cqw] shadow-[2cqw_2cqw_0_currentColor]`}>
+            <p className="font-neo-mono text-[2.8cqw] uppercase text-neo-ink/80">Hari paling sibuk</p>
+            <p className="mt-[1cqw] text-[4.5cqw] font-black uppercase leading-tight">{h.busiestDay.date}</p>
+            <p className="mt-[0.5cqw] font-neo-mono text-[3.2cqw]">
+              {h.busiestDay.minutes.toLocaleString("id-ID")} menit
+            </p>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-[3.5cqw] font-neo-mono text-[2.8cqw] uppercase text-neo-ink/60">
+        data sampai {h.lastDate}
+      </p>
     </SlideFrame>
   );
 }

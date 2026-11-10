@@ -17,6 +17,7 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
 }
 
 const pad3 = (n: number) => String(n).padStart(3, "0");
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
 
 function RainbowRule({ className = "" }: { className?: string }) {
   return (
@@ -50,7 +51,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
       <div className="relative flex min-h-0 flex-1 flex-col px-[5cqw] py-[4.5cqw]">{children}</div>
       <div className={GROOVE} />
       <footer className="flex justify-between px-[5cqw] py-[2.6cqw] font-retro-mono text-[3.2cqw] uppercase">
-        <span>{RANGE_LABEL[props.range]}</span>
+        <span>{rangeText(props)}</span>
         <span>Best viewed in 9:16</span>
       </footer>
     </div>
@@ -113,7 +114,7 @@ function IntroSlide(props: SlideProps) {
       </h1>
       <RainbowRule className="mx-auto mt-[4cqw] w-[30cqw]" />
       <p className="mx-auto mt-[4cqw] max-w-[72cqw] text-center text-[4.2cqw] leading-snug">
-        Rangkuman {RANGE_LABEL[props.range]} dari Spotify kamu, disusun langsung di browser.
+        Rangkuman {rangeText(props)} dari Spotify kamu, disusun langsung di browser.
       </p>
       <div className="mt-[6cqw] flex justify-center gap-[3cqw]">
         <GreenButton>Putar</GreenButton>
@@ -229,14 +230,18 @@ function TopAlbumSlide(props: SlideProps) {
         <p className="mt-[2cqw] line-clamp-1 font-retro-mono text-[4cqw] uppercase">{top.artist}</p>
       </div>
       <div className="mx-auto mt-[4cqw] w-[44cqw]">
-        <StatCard value={`${top.count}/${props.stats.trackCount}`} label="lagu di top kamu" note="dari album ini" />
+        {props.stats.source === "file" ? (
+          <StatCard value={String(top.count)} label="kali diputar" note="dari album ini" />
+        ) : (
+          <StatCard value={`${top.count}/${props.stats.trackCount}`} label="lagu di top kamu" note="dari album ini" />
+        )}
       </div>
     </SlideFrame>
   );
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   const max = Math.max(1, ...hours);
   return (
     <SlideFrame props={props} label="jam dengar">
@@ -267,7 +272,9 @@ function ListeningClockSlide(props: SlideProps) {
         </div>
       </div>
       <p className="mt-[3cqw] text-center font-retro-mono text-[3.2cqw] uppercase">
-        Dari {recentCount} lagu terakhir · {recentMinutes} menit
+        {source === "file"
+          ? `Dari ${recentCount} putar sepanjang ${props.year} · ${recentMinutes} menit`
+          : `Dari ${recentCount} lagu terakhir · ${recentMinutes} menit`}
       </p>
     </SlideFrame>
   );
@@ -275,13 +282,26 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   // Selalu 4 kartu supaya grid 2x2 penuh; rentang 1 tahun tidak punya angka "favorit lama".
   const cards: { value: string; label: string; note: string }[] = [
-    props.range !== "long_term"
-      ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "lagu top 10", note: "juga favorit lama" }
-      : { value: String(s.trackCount), label: "lagu teratas", note: "yang dianalisis" },
-    { value: String(s.uniqueArtistsInTop), label: "artis berbeda", note: `di top ${s.trackCount} lagu` },
-    { value: String(s.recentMinutes), label: "menit dengar", note: `dari ${s.recentCount} lagu terakhir` },
+    isFile
+      ? s.loyalTotal > 0
+        ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "lagu top 10", note: "juga favorit lama" }
+        : { value: String(s.trackCount), label: "lagu berbeda", note: `sepanjang ${props.year}` }
+      : props.range !== "long_term"
+        ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "lagu top 10", note: "juga favorit lama" }
+        : { value: String(s.trackCount), label: "lagu teratas", note: "yang dianalisis" },
+    {
+      value: String(s.uniqueArtistsInTop),
+      label: "artis berbeda",
+      note: isFile ? `sepanjang ${props.year}` : `di top ${s.trackCount} lagu`,
+    },
+    {
+      value: String(s.recentMinutes),
+      label: "menit dengar",
+      note: isFile ? `dari ${s.recentCount} putar sepanjang ${props.year}` : `dari ${s.recentCount} lagu terakhir`,
+    },
     { value: s.peakHour === null ? "-" : hourLabel(s.peakHour), label: "jam puncak", note: "paling sering dengar" },
   ];
 
@@ -367,6 +387,51 @@ function EmptySlide(props: SlideProps) {
         </div>
       </div>
       <div className="mt-auto" />
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props} label="menit">
+      <Title className="text-center text-[12cqw]">Total Menit</Title>
+      <RainbowRule className="mx-auto mt-[2cqw] w-[35cqw]" />
+
+      <div className={`mt-[4cqw] bg-retro-black p-[4cqw] text-center ${SUNKEN}`}>
+        <p className="font-retro-mono text-[3cqw] uppercase text-retro-white/70">Waktu dengar riwayat {props.year}</p>
+        <p className="mt-[2cqw] font-retro-lcd text-[14cqw] leading-none text-retro-lcd">
+          {h.totalMinutes.toLocaleString("id-ID")}
+        </p>
+        <p className="mt-[1cqw] font-retro-mono text-[3.8cqw] uppercase text-retro-white/80">Menit Total</p>
+      </div>
+
+      <div className="mt-auto space-y-[3cqw]">
+        {h.topTrack && (
+          <div className={`bg-retro-panel p-[3cqw] ${RAISED}`}>
+            <p className="font-retro-mono text-[3cqw] uppercase text-retro-navy">Lagu paling sering diputar</p>
+            <p className="line-clamp-1 text-[4.4cqw] font-bold text-retro-black">{h.topTrack.name}</p>
+            <p className="line-clamp-1 font-retro-mono text-[3.2cqw] text-retro-shade">
+              {h.topTrack.artist} ({h.topTrack.plays} plays)
+            </p>
+          </div>
+        )}
+        {h.busiestDay && (
+          <div className={`bg-retro-panel p-[3cqw] ${RAISED}`}>
+            <p className="font-retro-mono text-[3cqw] uppercase text-retro-navy">Hari paling sibuk</p>
+            <p className="text-[4.4cqw] font-bold text-retro-black">{h.busiestDay.date}</p>
+            <p className="font-retro-mono text-[3.2cqw] text-retro-shade">
+              {h.busiestDay.minutes.toLocaleString("id-ID")} menit
+            </p>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-[3cqw] text-center font-retro-mono text-[3cqw] uppercase text-retro-shade">
+        data sampai {h.lastDate}
+      </p>
     </SlideFrame>
   );
 }

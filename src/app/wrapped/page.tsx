@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Masthead from "@/components/Masthead";
+import HistoryUpload from "@/components/HistoryUpload";
 import { DESIGNS, type DesignId } from "@/designs";
 import { PREVIEW_SAMPLE } from "@/designs/preview-sample";
 
@@ -12,15 +13,25 @@ export default function DesignPickerPage() {
         <Masthead />
 
         <section className="border-b-2 border-sec/20 py-10 md:py-14">
-          <div className="max-w-2xl">
-            <h1 className="font-display text-5xl sm:text-7xl uppercase tracking-tight">
-              Pilih Format Desain.
-            </h1>
-            <p className="font-body text-xs sm:text-sm text-sec/75 mt-3 leading-relaxed">
-              Penasaran bagaimana kebiasaan musikmu terlihat dalam bentuk struk belanja unik, poster cyberpunk, atau majalah retro? Pilih salah satu tema di bawah untuk melihat kepribadian musikmu, dan kamu bebas berganti gaya kapan saja.
-            </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-2xl">
+              <h1 className="font-display text-5xl sm:text-7xl uppercase tracking-tight">
+                Pilih Format Desain.
+              </h1>
+              <p className="font-body text-xs sm:text-sm text-sec/75 mt-3 leading-relaxed">
+                Penasaran bagaimana kebiasaan musikmu terlihat dalam bentuk struk belanja unik, poster cyberpunk, atau majalah retro? Pilih salah satu tema di bawah untuk melihat kepribadian musikmu, dan kamu bebas berganti gaya kapan saja.
+              </p>
+            </div>
+            <Link
+              href="/mulai"
+              className="nextec-hard-button self-start whitespace-nowrap bg-pri px-3.5 py-2 font-mono text-xs uppercase font-bold text-sec transition-colors hover:bg-sec hover:text-pri focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red"
+            >
+              ← Ganti mode
+            </Link>
           </div>
         </section>
+
+        <HistoryUpload />
 
         <ul className="grid gap-8 py-12 sm:grid-cols-2 lg:grid-cols-3">
           {designs.map(([id, design], i) => (

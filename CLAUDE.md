@@ -13,7 +13,7 @@ Next.js (App Router, `cacheComponents: true`) + Tailwind v4. Teks UI berbahasa I
 
 ## Alur user
 
-`/` (login) → Spotify OAuth → `/wrapped` (pilih design, ada preview) → `/wrapped/<id>` (slide memakai design itu).
+`/` (login) → Spotify OAuth → `/mulai` (pilih mode) → `/wrapped` (pilih design, ada preview) → `/wrapped/<id>` (slide memakai design itu).
 
 ## Struktur
 
@@ -21,10 +21,11 @@ Next.js (App Router, `cacheComponents: true`) + Tailwind v4. Teks UI berbahasa I
 src/
 ├── app/                      halaman + shell NEXTEC (design utama)
 │   ├── page.tsx              halaman depan
+│   ├── mulai/page.tsx        pilih mode (Cepat vs Lengkap)
 │   ├── wrapped/page.tsx      pilih design (preview pakai PREVIEW_SAMPLE)
 │   ├── wrapped/[design]/     validasi id → <WrappedViewer design={id} />
 │   └── api/                  auth, data Spotify, proxy gambar
-├── components/               komponen shell NEXTEC (Masthead, LoginError, WrappedViewer)
+├── components/               komponen shell NEXTEC (Masthead, LoginError, ModePicker, HistoryUpload, WrappedViewer)
 ├── designs/
 │   ├── types.ts              kontrak: SlideProps, Design
 │   ├── index.ts              DESIGNS (daftar & urutan design)
@@ -34,7 +35,7 @@ src/
 │       ├── Slides.tsx        export const SLIDES = [...]
 │       ├── fonts.ts          export const fontClassName (next/font)
 │       └── theme.css         token Tailwind berawalan <id>-
-└── lib/                      Spotify API (server-only) + computeStats, tidak terikat design
+└── lib/                      Spotify API (server-only) + computeStats + history.ts + mode.ts, tidak terikat design
 ```
 
 ## Menambah design baru (contoh: `sketch`)
@@ -55,6 +56,30 @@ src/
 - **Gambar Spotify wajib lewat `proxiedImageUrl()`** + `<img crossOrigin="anonymous">`, bukan `next/image`. Ini supaya export html-to-image tidak kena CORS.
 - **Data atau statistik baru** ditambahkan di `src/lib/stats.ts` (`computeStats`) dan tersedia untuk semua design. Lengkapi juga `preview-sample.ts` kalau datanya perlu tampil di preview.
 - **Penamaan:** komponen slide `XxxSlide`, helper deskriptif (`fitFontSize`, bukan `fit`), konstanta `UPPER_SNAKE`, props slide bernama `props` (bukan `p`).
+
+## Batasan data Spotify
+
+- Web API tidak menyediakan total menit dengar. `recentMinutes` hanya dihitung dari 50 lagu terakhir, dan label di slide wajib menyebut itu.
+- App ini berjalan di Development Mode. Sejak 2026 ada field yang dihapus dan kuota dihitung per akun developer. Audio features (energy, mood) tidak tersedia.
+- Jangan tampilkan angka yang tidak berasal dari data asli (tidak boleh ada estimasi).
+
+## Total menit asli (opsional)
+
+Implementasi fitur dari `docs/prompts/total-menit-asli.md`:
+
+- User dapat upload file "Extended streaming history" Spotify (`.zip` atau `Streaming_History_Audio_*.json`). Fitur ini opsional.
+- File dibaca **di browser saja** (`src/lib/history.ts`). Isi file tidak dikirim ke server atau di-log.
+- Yang disimpan hanya objek `HistoryStats` di `localStorage` (`wrapped.history.v2`), bukan riwayat mentah. Saat upload berhasil, key lama `wrapped.history.v1` dihapus. Aturan kepemilikan (`ownerId`) memastikan data hanya tampil untuk akun Spotify pemiliknya.
+- Sumber `stats` per mode di `WrappedViewer`:
+  - Mode `"cepat"`: dihitung dari Spotify Web API via `computeStats(data)` (`source: "api"`).
+  - Mode `"lengkap"` dengan file riwayat milik akun ini: dihitung penuh dari file via `statsFromHistory(historyStats)` (`source: "file"`), pilihan rentang waktu disembunyikan.
+  - Mode `"lengkap"` belum ada file untuk akun ini: memakai `PREVIEW_SAMPLE.stats` (`source: "api"`) disertai banner contoh di shell NEXTEC.
+- Properti `stats.source` (`"api" | "file"`) dipakai oleh ke-7 design untuk memilih label rentang (`"{year}"` saat `"file"`) dan label sampel (`"dari N putar sepanjang {year}"` saat `"file"`), serta menyembunyikan atau memberi fallback jujur untuk field yang tidak ada di file (`topGenres` kosong, `loyalTotal` 0, gambar `null`).
+- Setiap design punya `totalMinutesSlide` di luar array `SLIDES`. `WrappedViewer` menyisipkannya di posisi ke-2 hanya kalau `stats.history` ada. Tanpa file (di mode cepat), Wrapped tetap 9 slide.
+- M1 (Penyimpanan mode): `localStorage`, key `wrapped.mode.v1`, nilai `"cepat"` atau `"lengkap"`. Selalu dibaca dalam `try/catch`.
+- M2 (Mode belum dipilih): Dianggap `"cepat"`. Tidak ada redirect paksa.
+- M4 (Pindah ke Cepat): Ringkasan riwayat tidak dihapus, hanya diabaikan oleh viewer.
+- M6 (Strip Lengkap): Satu baris ringkas di `/wrapped`, bukan blok besar. Panduan disembunyikan di `<details>` yang tertutup secara default.
 
 ## Cek sebelum selesai
 

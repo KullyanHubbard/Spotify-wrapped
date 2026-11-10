@@ -25,6 +25,7 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
 
 /** Ubah teks bebas jadi gaya SNAKE_CASE ala HUD. */
 const snake = (text: string) => text.toUpperCase().replace(/[^A-Z0-9#]+/g, "_");
@@ -65,7 +66,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col px-[6cqw] py-[5cqw]">{children}</div>
       <footer className="mx-[6cqw] flex justify-between border-t-[0.3cqw] border-cyberpunk-green/30 py-[3cqw] font-cyberpunk-mono text-[2.8cqw] uppercase text-cyberpunk-dim">
-        <span>&gt; {RANGE_LABEL[props.range]}</span>
+        <span>&gt; {rangeText(props)}</span>
         <span>Spotify_stats</span>
       </footer>
     </div>
@@ -115,7 +116,7 @@ function IntroSlide(props: SlideProps) {
         <span className={`block ${NEON.magenta}`}>kamu</span>
         <span className={`block ${NEON.cyan}`}>{props.year}</span>
       </h1>
-      <Terminal className="mt-[5cqw]">Rangkuman {RANGE_LABEL[props.range]} dari Spotify kamu, di-decode langsung di browser.</Terminal>
+      <Terminal className="mt-[5cqw]">Rangkuman {rangeText(props)} dari Spotify kamu, di-decode langsung di browser.</Terminal>
       <div className="mt-[6cqw] flex gap-[3cqw] font-cyberpunk-mono text-[3cqw] uppercase">
         <span className={`px-[3.5cqw] py-[2cqw] text-cyberpunk-green ${GLOW_BORDER}`}>Mulai scan →</span>
         <span className="border-[0.4cqw] border-cyberpunk-dim/60 px-[3.5cqw] py-[2cqw] text-cyberpunk-white">Lihat log</span>
@@ -223,9 +224,11 @@ function TopAlbumSlide(props: SlideProps) {
         </div>
         <HudPanel accent="border-cyberpunk-magenta" className="px-[4cqw] py-[3cqw] text-center">
           <span className={`block text-[10cqw] font-bold leading-none ${NEON.magenta}`}>
-            {top.count}/{props.stats.trackCount}
+            {props.stats.source === "file" ? top.count : `${top.count}/${props.stats.trackCount}`}
           </span>
-          <span className="font-cyberpunk-mono text-[2.6cqw] text-cyberpunk-magenta/80">TRACK_LOAD</span>
+          <span className="font-cyberpunk-mono text-[2.6cqw] text-cyberpunk-magenta/80">
+            {props.stats.source === "file" ? "PLAY_COUNT" : "TRACK_LOAD"}
+          </span>
         </HudPanel>
       </div>
     </SlideFrame>
@@ -233,7 +236,7 @@ function TopAlbumSlide(props: SlideProps) {
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   const max = Math.max(1, ...hours);
   return (
     <SlideFrame props={props} label="jam dengar">
@@ -265,7 +268,10 @@ function ListeningClockSlide(props: SlideProps) {
         </div>
       </HudPanel>
       <p className="mt-[3.5cqw] font-cyberpunk-mono text-[3cqw] text-cyberpunk-dim">
-        {"// "}dari {recentCount} lagu terakhir · {recentMinutes} menit
+        {"// "}
+        {source === "file"
+          ? `dari ${recentCount} putar sepanjang ${props.year} · ${recentMinutes} menit`
+          : `dari ${recentCount} lagu terakhir · ${recentMinutes} menit`}
       </p>
     </SlideFrame>
   );
@@ -273,11 +279,16 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   // Selalu 4 panel supaya grid 2x2 penuh; rentang 1 tahun tidak punya angka "favorit lama".
   const stats: { value: string; label: string }[] = [
-    props.range !== "long_term"
-      ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "TOP10_LOYAL" }
-      : { value: String(s.trackCount), label: "TRACKS_SCANNED" },
+    isFile
+      ? s.loyalTotal > 0
+        ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "TOP10_LOYAL" }
+        : { value: String(s.trackCount), label: "TRACKS_SCANNED" }
+      : props.range !== "long_term"
+        ? { value: `${s.loyalCount}/${s.loyalTotal}`, label: "TOP10_LOYAL" }
+        : { value: String(s.trackCount), label: "TRACKS_SCANNED" },
     { value: String(s.uniqueArtistsInTop), label: "UNIQUE_ARTISTS" },
     { value: String(s.recentMinutes), label: "MINUTES_LOGGED" },
     { value: s.peakHour === null ? "--" : hourLabel(s.peakHour), label: "PEAK_HOUR" },
@@ -363,6 +374,55 @@ function EmptySlide(props: SlideProps) {
       </Title>
       <Title className="mt-[2cqw] text-[8cqw]">Belum cukup data</Title>
       <Terminal className="mt-[4cqw]">Dengerin lebih banyak dulu, atau ganti rentang waktunya.</Terminal>
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props} label="menit">
+      <StatusTag>AUDIO_LOG_{props.year}</StatusTag>
+      <Title className="mt-[3cqw] text-[12cqw]">
+        Total Menit
+        <br />
+        <span className={NEON.green}>Dengar Asli</span>
+      </Title>
+
+      <HudPanel className="mt-[4cqw] p-[5cqw] text-center" accent="border-cyberpunk-green">
+        <span className="font-cyberpunk-mono text-[2.8cqw] text-cyberpunk-dim">TOTAL_MINUTES_PLAYED</span>
+        <span className={`mt-[1cqw] block text-[15cqw] font-bold leading-none ${NEON.green}`}>
+          {h.totalMinutes.toLocaleString("id-ID")}
+        </span>
+        <span className="mt-[1cqw] block font-cyberpunk-mono text-[3.6cqw] text-cyberpunk-white">MENIT</span>
+      </HudPanel>
+
+      <div className="mt-auto space-y-[3cqw]">
+        {h.topTrack && (
+          <HudPanel className="p-[3.5cqw]" accent="border-cyberpunk-cyan">
+            <span className="font-cyberpunk-mono text-[2.6cqw] text-cyberpunk-cyan">TOP_TRACK</span>
+            <p className="line-clamp-1 font-bold text-[4.4cqw] text-cyberpunk-white">{h.topTrack.name}</p>
+            <p className="line-clamp-1 font-cyberpunk-mono text-[3cqw] text-cyberpunk-dim">
+              {h.topTrack.artist} {"//"} {h.topTrack.plays} PLAYS
+            </p>
+          </HudPanel>
+        )}
+        {h.busiestDay && (
+          <HudPanel className="p-[3.5cqw]" accent="border-cyberpunk-magenta">
+            <span className="font-cyberpunk-mono text-[2.6cqw] text-cyberpunk-magenta">BUSIEST_DAY</span>
+            <p className="font-bold text-[4.4cqw] text-cyberpunk-white">{h.busiestDay.date}</p>
+            <p className="font-cyberpunk-mono text-[3cqw] text-cyberpunk-dim">
+              {h.busiestDay.minutes.toLocaleString("id-ID")} MENIT
+            </p>
+          </HudPanel>
+        )}
+      </div>
+
+      <p className="mt-[3cqw] font-cyberpunk-mono text-[2.8cqw] text-cyberpunk-dim">
+        data sampai {h.lastDate}
+      </p>
     </SlideFrame>
   );
 }

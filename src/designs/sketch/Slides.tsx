@@ -16,6 +16,8 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
   return `${Math.max(min, Math.min(max, (max * chars) / Math.max(text.length, 1)))}cqw`;
 }
 
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
+
 function SlideFrame({ props, label, children }: { props: SlideProps; label: string; children: ReactNode }) {
   return (
     <div className={`flex h-full w-full flex-col font-sketch-hand text-sketch-ink ${DOTTED_PAPER}`}>
@@ -30,7 +32,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col px-[6cqw] py-[4cqw]">{children}</div>
       <footer className="mx-[6cqw] flex justify-between border-t-[0.5cqw] border-dashed border-sketch-ink/40 py-[3cqw] text-[3.6cqw] text-sketch-faint">
-        <span>{RANGE_LABEL[props.range]}</span>
+        <span>{rangeText(props)}</span>
         <span>spotify stats</span>
       </footer>
     </div>
@@ -101,7 +103,7 @@ function IntroSlide(props: SlideProps) {
         kamu<span className="text-sketch-red">!</span>
       </h1>
       <p className="mt-[4cqw] max-w-[70cqw] text-[5cqw] leading-snug">
-        Rangkuman {RANGE_LABEL[props.range]}, digambar khusus buat kamu.
+        Rangkuman {rangeText(props)}, digambar khusus buat kamu.
       </p>
       <div className="mt-[6cqw] flex items-end justify-between">
         <span className={`${BOX} ${SHADOW} bg-sketch-paper px-[5cqw] py-[2.5cqw] font-sketch-display text-[5cqw] font-bold`}>
@@ -213,7 +215,7 @@ function TopAlbumSlide(props: SlideProps) {
         </div>
         <div className={`${CIRCLE} flex size-[26cqw] rotate-3 flex-col items-center justify-center`}>
           <span className="font-sketch-display text-[9cqw] font-bold leading-none">{top.count}</span>
-          <span className="text-[3.4cqw]">/{props.stats.trackCount} lagu</span>
+          <span className="text-[3.4cqw]">{props.stats.source === "file" ? "putar" : `/${props.stats.trackCount} lagu`}</span>
         </div>
       </div>
     </SlideFrame>
@@ -221,7 +223,7 @@ function TopAlbumSlide(props: SlideProps) {
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   const max = Math.max(1, ...hours);
   return (
     <SlideFrame props={props} label="jam dengar">
@@ -254,7 +256,9 @@ function ListeningClockSlide(props: SlideProps) {
           <span>23</span>
         </div>
         <p className="mt-[3cqw] text-[3.8cqw] text-sketch-faint">
-          dari {recentCount} lagu terakhir · {recentMinutes} menit
+          {source === "file"
+            ? `dari ${recentCount} putar sepanjang ${props.year} · ${recentMinutes} menit`
+            : `dari ${recentCount} lagu terakhir · ${recentMinutes} menit`}
         </p>
       </div>
     </SlideFrame>
@@ -263,12 +267,19 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   const stats: { value: string; label: string }[] = [];
-  if (props.range !== "long_term") {
+  if (isFile ? s.loyalTotal > 0 : props.range !== "long_term") {
     stats.push({ value: `${s.loyalCount}/${s.loyalTotal}`, label: "lagu top 10 kamu juga favorit jangka panjang" });
   }
-  stats.push({ value: String(s.uniqueArtistsInTop), label: `artis berbeda di top ${s.trackCount} lagu` });
-  stats.push({ value: String(s.recentMinutes), label: `menit dari ${s.recentCount} lagu terakhir` });
+  stats.push({
+    value: String(s.uniqueArtistsInTop),
+    label: isFile ? `artis berbeda sepanjang ${props.year}` : `artis berbeda di top ${s.trackCount} lagu`,
+  });
+  stats.push({
+    value: String(s.recentMinutes),
+    label: isFile ? `menit dari ${s.recentCount} putar sepanjang ${props.year}` : `menit dari ${s.recentCount} lagu terakhir`,
+  });
 
   return (
     <SlideFrame props={props} label="angka">
@@ -352,6 +363,49 @@ function EmptySlide(props: SlideProps) {
         Belum cukup data<span className="text-sketch-red">!</span>
       </Heading>
       <p className="mt-[3cqw] text-[5cqw]">Dengerin lebih banyak dulu, atau ganti rentang waktunya.</p>
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props} label="total menit">
+      <Note className="-rotate-1">riwayat dengar {props.year}</Note>
+      <div className="mt-[3cqw]">
+        <Heading className="text-[13cqw]">Total menit asli</Heading>
+        <Squiggle className="h-[2.5cqw] w-[50cqw] text-sketch-red" />
+      </div>
+
+      <div className="my-auto flex flex-col items-center">
+        <div className={`${CIRCLE} ${SHADOW} flex flex-col items-center justify-center bg-sketch-yellow p-[6cqw] text-center`}>
+          <span className="font-sketch-display text-[16cqw] font-bold leading-none text-sketch-ink">
+            {h.totalMinutes.toLocaleString("id-ID")}
+          </span>
+          <span className="font-sketch-hand text-[5.5cqw] uppercase tracking-wider text-sketch-ink">menit</span>
+        </div>
+      </div>
+
+      <div className="mt-auto space-y-[3cqw]">
+        {h.topTrack && (
+          <div className={`bg-sketch-paper p-[3.5cqw] ${BOX} ${SHADOW}`}>
+            <p className="text-[3.5cqw] text-sketch-faint">lagu paling sering diputar</p>
+            <p className="line-clamp-1 font-sketch-display text-[4.8cqw] font-bold">{h.topTrack.name}</p>
+            <p className="line-clamp-1 text-[3.8cqw]">{h.topTrack.artist} ({h.topTrack.plays} kali)</p>
+          </div>
+        )}
+        {h.busiestDay && (
+          <div className={`bg-sketch-paper p-[3.5cqw] ${BOX} ${SHADOW}`}>
+            <p className="text-[3.5cqw] text-sketch-faint">hari paling sibuk</p>
+            <p className="font-sketch-display text-[4.8cqw] font-bold">{h.busiestDay.date}</p>
+            <p className="text-[3.8cqw]">{h.busiestDay.minutes.toLocaleString("id-ID")} menit</p>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-[3cqw] text-[3.4cqw] text-sketch-faint">data sampai {h.lastDate}</p>
     </SlideFrame>
   );
 }

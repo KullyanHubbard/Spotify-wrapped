@@ -13,6 +13,7 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
 
 /** Kata terakhir dibuat miring, seperti "Transform *the* way" di contoh design. */
 function ItalicLast({ text }: { text: string }) {
@@ -37,7 +38,7 @@ function SlideFrame({ props, dark = false, children }: { props: SlideProps; dark
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col px-[8cqw] py-[7cqw]">{children}</div>
       <footer className={`mx-[8cqw] flex justify-between border-t-[0.2cqw] py-[4cqw] ${dark ? "border-luxury-stone/40" : HAIRLINE}`}>
-        <span className={`${LABEL} text-luxury-stone`}>{RANGE_LABEL[props.range]}</span>
+        <span className={`${LABEL} text-luxury-stone`}>{rangeText(props)}</span>
         <span className={`${LABEL} text-luxury-stone`}>Spotify</span>
       </footer>
     </div>
@@ -74,7 +75,7 @@ function IntroSlide(props: SlideProps) {
         kamu
       </h1>
       <p className="mt-[8cqw] max-w-[62cqw] text-[3.4cqw] font-light leading-relaxed text-luxury-stone">
-        Rangkuman {RANGE_LABEL[props.range]}, disusun dengan tenang untuk {props.name}.
+        Rangkuman {rangeText(props)}, disusun dengan tenang untuk {props.name}.
       </p>
     </SlideFrame>
   );
@@ -172,7 +173,7 @@ function TopAlbumSlide(props: SlideProps) {
         <div className={`mt-[4cqw] flex items-baseline justify-between border-t-[0.2cqw] pt-[3cqw] ${HAIRLINE}`}>
           <span className={`${LABEL} text-luxury-stone`}>{top.artist}</span>
           <span className="font-luxury-display text-[4.6cqw] italic">
-            {top.count} dari {props.stats.trackCount} lagu teratas
+            {props.stats.source === "file" ? `${top.count} kali diputar` : `${top.count} dari ${props.stats.trackCount} lagu teratas`}
           </span>
         </div>
       </div>
@@ -181,7 +182,7 @@ function TopAlbumSlide(props: SlideProps) {
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   const max = Math.max(1, ...hours);
   return (
     <SlideFrame props={props} dark>
@@ -205,7 +206,9 @@ function ListeningClockSlide(props: SlideProps) {
         <span>23</span>
       </div>
       <p className="mt-[5cqw] text-[3.2cqw] font-light text-luxury-stone">
-        Dari {recentCount} lagu terakhir, {recentMinutes} menit.
+        {source === "file"
+          ? `Dari ${recentCount} putar sepanjang ${props.year}, ${recentMinutes} menit.`
+          : `Dari ${recentCount} lagu terakhir, ${recentMinutes} menit.`}
       </p>
     </SlideFrame>
   );
@@ -213,12 +216,19 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   const rows: { value: string; label: string }[] = [];
-  if (props.range !== "long_term") {
+  if (isFile ? s.loyalTotal > 0 : props.range !== "long_term") {
     rows.push({ value: `${s.loyalCount}/${s.loyalTotal}`, label: "Lagu top 10 yang juga favorit lama" });
   }
-  rows.push({ value: String(s.uniqueArtistsInTop), label: `Artis berbeda di ${s.trackCount} lagu teratas` });
-  rows.push({ value: String(s.recentMinutes), label: `Menit dari ${s.recentCount} lagu terakhir` });
+  rows.push({
+    value: String(s.uniqueArtistsInTop),
+    label: isFile ? `Artis berbeda sepanjang ${props.year}` : `Artis berbeda di ${s.trackCount} lagu teratas`,
+  });
+  rows.push({
+    value: String(s.recentMinutes),
+    label: isFile ? `Menit dari ${s.recentCount} putar sepanjang ${props.year}` : `Menit dari ${s.recentCount} lagu terakhir`,
+  });
 
   return (
     <SlideFrame props={props}>
@@ -298,6 +308,54 @@ function EmptySlide(props: SlideProps) {
       </Display>
       <p className="mt-[6cqw] max-w-[62cqw] text-[3.4cqw] font-light leading-relaxed text-luxury-stone">
         Dengarkan lebih banyak dulu, atau pilih rentang waktu lain.
+      </p>
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props}>
+      <p className={`${LABEL} text-luxury-stone`}>Waktu dengar · {props.year}</p>
+      <Display className="mt-[4cqw] text-[15cqw]">
+        Total
+        <br />
+        <em className="italic">menit</em>
+      </Display>
+
+      <div className={`mt-[6cqw] border-b-[0.2cqw] border-t-[0.2cqw] py-[5cqw] ${HAIRLINE}`}>
+        <p className="font-luxury-display text-[17cqw] leading-none">
+          {h.totalMinutes.toLocaleString("id-ID")}
+        </p>
+        <p className={`mt-[1.5cqw] ${LABEL} text-luxury-stone`}>Menit diputar</p>
+      </div>
+
+      <div className="mt-auto space-y-[4cqw]">
+        {h.topTrack && (
+          <div className={`border-b-[0.2cqw] pb-[3.5cqw] ${HAIRLINE}`}>
+            <p className={`${LABEL} text-luxury-stone`}>Lagu teratas</p>
+            <p className="mt-[1cqw] line-clamp-1 font-luxury-display text-[4.6cqw]">{h.topTrack.name}</p>
+            <p className="mt-[0.5cqw] text-[3.2cqw] font-light text-luxury-stone">
+              {h.topTrack.artist} · {h.topTrack.plays} kali
+            </p>
+          </div>
+        )}
+        {h.busiestDay && (
+          <div className={`border-b-[0.2cqw] pb-[3.5cqw] ${HAIRLINE}`}>
+            <p className={`${LABEL} text-luxury-stone`}>Hari paling sibuk</p>
+            <p className="mt-[1cqw] font-luxury-display text-[4.6cqw]">{h.busiestDay.date}</p>
+            <p className="mt-[0.5cqw] text-[3.2cqw] font-light text-luxury-stone">
+              {h.busiestDay.minutes.toLocaleString("id-ID")} menit
+            </p>
+          </div>
+        )}
+      </div>
+
+      <p className={`mt-[3.5cqw] ${LABEL} text-luxury-stone`}>
+        data sampai {h.lastDate}
       </p>
     </SlideFrame>
   );

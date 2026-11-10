@@ -26,6 +26,11 @@ const toTrack = (t: SpTrack): Track => ({
   durationMs: t.duration_ms,
 });
 
+// Kuota dev mode dihitung per akun developer, jadi ganti-ganti range tidak boleh selalu memanggil Spotify.
+// shortcut: cache per proses server, pindah ke KV kalau jalan multi-instance.
+const CACHE_TTL_MS = 5 * 60_000;
+const responseCache = new Map<string, { expiresAt: number; data: WrappedData }>();
+
 export async function GET(request: NextRequest) {
   const param = request.nextUrl.searchParams.get("range") as TimeRange | null;
   const range: TimeRange = param && RANGES.includes(param) ? param : "medium_term";
@@ -33,6 +38,12 @@ export async function GET(request: NextRequest) {
   try {
     const token = await getAccessToken();
     if (!token) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+    const cacheKey = `${token}:${range}`;
+    const cached = responseCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return NextResponse.json(cached.data, { headers: { "Cache-Control": "private, no-store" } });
+    }
 
     const [me, artists, tracks, longTerm, recent] = await Promise.all([
       spotifyGet<{ display_name: string | null; id: string; images?: SpImage[] }>("/me", token),
@@ -46,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     const topTracks = tracks.items.map(toTrack);
     const data: WrappedData = {
-      user: { name: me.display_name || me.id, image: bestImage(me.images) },
+      user: { id: me.id, name: me.display_name || me.id, image: bestImage(me.images) },
       range,
       topArtists: artists.items.map(
         (a): Artist => ({ id: a.id, name: a.name, image: bestImage(a.images), genres: a.genres ?? [] }),
@@ -57,6 +68,9 @@ export async function GET(request: NextRequest) {
         (p): Play => ({ trackId: p.track.id, playedAt: p.played_at, durationMs: p.track.duration_ms }),
       ),
     };
+    const now = Date.now();
+    for (const [key, entry] of responseCache) if (entry.expiresAt <= now) responseCache.delete(key);
+    responseCache.set(cacheKey, { expiresAt: now + CACHE_TTL_MS, data });
     return NextResponse.json(data, { headers: { "Cache-Control": "private, no-store" } });
   } catch (e) {
     // Detail error hanya di log server. Selalu balas JSON (bukan throw), supaya cookie hasil refresh tetap terkirim.
@@ -64,7 +78,8 @@ export async function GET(request: NextRequest) {
     if (e instanceof SpotifyError) {
       // 403 di Development Mode biasanya berarti akun belum ada di allowlist (User Management).
       const error = e.status === 403 ? "not_allowlisted" : e.status === 429 ? "rate_limited" : "spotify_error";
-      return NextResponse.json({ error }, { status: e.status });
+      const headers = e.status === 429 && e.retryAfter ? { "Retry-After": e.retryAfter } : undefined;
+      return NextResponse.json({ error }, { status: e.status, headers });
     }
     return NextResponse.json({ error: "spotify_error" }, { status: 502 });
   }

@@ -24,4 +24,5 @@ export type Design = {
   /** Class variabel next/font; dipasang di pembungkus slide, bukan di <html>. */
   fontClassName: string;
   slides: ComponentType<SlideProps>[];
+  totalMinutesSlide: ComponentType<SlideProps>;
 };

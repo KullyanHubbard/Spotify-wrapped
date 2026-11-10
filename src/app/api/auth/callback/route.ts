@@ -25,5 +25,5 @@ export async function GET(request: NextRequest) {
     console.error(e);
     return fail("token_exchange_failed");
   }
-  return NextResponse.redirect(appUrl("/wrapped"));
+  return NextResponse.redirect(appUrl("/mulai"));
 }

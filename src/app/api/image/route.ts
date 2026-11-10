@@ -1,9 +1,16 @@
 import { type NextRequest } from "next/server";
+import { COOKIE } from "@/lib/spotify";
+
+const MAX_IMAGE_BYTES = 5_000_000;
 
 // Proxy gambar Spotify supaya same-origin, jadi html-to-image bisa menggambarnya ke canvas tanpa masalah CORS.
 const ALLOWED_HOSTS = new Set(["i.scdn.co", "mosaic.scdn.co", "image-cdn-ak.spotifycdn.com", "image-cdn-fa.spotifycdn.com"]);
 
 export async function GET(request: NextRequest) {
+  // Hanya untuk user yang login, supaya proxy ini tidak jadi bandwidth gratis untuk siapa saja.
+  if (!request.cookies.has(COOKIE.access) && !request.cookies.has(COOKIE.refresh)) {
+    return new Response("unauthorized", { status: 401 });
+  }
   const raw = request.nextUrl.searchParams.get("u");
   let target: URL;
   try {
@@ -23,11 +30,15 @@ export async function GET(request: NextRequest) {
   if (!upstream?.ok || !upstream.body || !/^image\/(jpeg|png|webp)\b/.test(contentType)) {
     return new Response("upstream error", { status: 502 });
   }
+  // shortcut: hanya menolak lewat Content-Length; respons tanpa header itu tetap diteruskan.
+  if (Number(upstream.headers.get("Content-Length") ?? 0) > MAX_IMAGE_BYTES) {
+    return new Response("image too large", { status: 502 });
+  }
   return new Response(upstream.body, {
     headers: {
       "Content-Type": contentType,
       "X-Content-Type-Options": "nosniff",
-      "Cache-Control": "public, max-age=86400, immutable",
+      "Cache-Control": "private, max-age=86400, immutable",
     },
   });
 }

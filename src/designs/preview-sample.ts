@@ -1,5 +1,5 @@
 import { computeStats } from "@/lib/stats";
-import type { Artist, Play, Track } from "@/lib/types";
+import type { Artist, HistorySummary, Play, Track } from "@/lib/types";
 
 // Data contoh (fiktif) untuk preview slide di halaman pilih design.
 const artistNames = ["Senja Kolektif", "Nadia Ray", "Ombak Biru", "Kota Hujan", "Lintang"];
@@ -21,16 +21,28 @@ const recent: Play[] = [21, 22, 22, 23, 23, 23, 20, 19, 9, 13, 0, 1].map((h, i) 
   durationMs: 210_000,
 }));
 
+const sampleHistory: HistorySummary = {
+  year: 2026,
+  totalMinutes: 48_250,
+  playCount: 1_420,
+  topTrack: { name: "Lampu Kota", artist: "Senja Kolektif", plays: 142 },
+  busiestDay: { date: "2026-10-18", minutes: 340 },
+  lastDate: "2026-11-08",
+};
+
 export const PREVIEW_SAMPLE = {
   name: "Kamu",
   range: "medium_term" as const,
   year: 2026,
-  stats: computeStats({
-    user: { name: "Kamu", image: null },
-    range: "medium_term",
-    topArtists: artists,
-    topTracks: tracks,
-    longTermTrackIds: ["t0", "t2"],
-    recent,
-  }),
+  stats: computeStats(
+    {
+      user: { id: "preview", name: "Kamu", image: null },
+      range: "medium_term",
+      topArtists: artists,
+      topTracks: tracks,
+      longTermTrackIds: ["t0", "t2"],
+      recent,
+    },
+    sampleHistory
+  ),
 };

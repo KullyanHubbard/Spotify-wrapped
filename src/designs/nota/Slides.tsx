@@ -13,6 +13,7 @@ function fitFontSize(text: string, max: number, min: number, chars = 8) {
 }
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
+const rangeText = (props: SlideProps) => (props.stats.source === "file" ? String(props.year) : RANGE_LABEL[props.range]);
 
 /** Tepi kertas bergerigi (sobekan struk). */
 function ZigZag({ flip = false }: { flip?: boolean }) {
@@ -54,7 +55,7 @@ function SlideFrame({ props, label, children }: { props: SlideProps; label: stri
           <Divider double />
           <div className="flex justify-between text-[2.8cqw] uppercase">
             <span>Nota #{props.year}-{pad2(props.n)}</span>
-            <span>{RANGE_LABEL[props.range]}</span>
+            <span>{rangeText(props)}</span>
           </div>
           <Divider />
           <div className="flex min-h-0 flex-1 flex-col">{children}</div>
@@ -109,7 +110,7 @@ function IntroSlide(props: SlideProps) {
     <SlideFrame props={props} label="Intro">
       <Row left="PELANGGAN" right={props.name} />
       <Row left="KASIR" right="ALGORITMA" />
-      <Row left="PERIODE" right={RANGE_LABEL[props.range].toUpperCase()} />
+      <Row left="PERIODE" right={rangeText(props).toUpperCase()} />
       <h1 className="mt-auto text-center text-[12cqw] font-bold uppercase leading-[0.95] tracking-tight">
         Ini
         <br />
@@ -216,13 +217,17 @@ function TopAlbumSlide(props: SlideProps) {
         <p className="mt-[1cqw] line-clamp-1 text-nota-faded">{top.artist}</p>
       </div>
       <Divider />
-      <Row left="LAGU DI TOP KAMU" right={`${top.count}/${props.stats.trackCount}`} bold />
+      {props.stats.source === "file" ? (
+        <Row left="JUMLAH PUTAR" right={`${top.count} KALI`} bold />
+      ) : (
+        <Row left="LAGU DI TOP KAMU" right={`${top.count}/${props.stats.trackCount}`} bold />
+      )}
     </SlideFrame>
   );
 }
 
 function ListeningClockSlide(props: SlideProps) {
-  const { hours, peakHour, recentCount, recentMinutes } = props.stats;
+  const { hours, peakHour, recentCount, recentMinutes, source } = props.stats;
   // Dikelompokkan per 4 jam supaya muat sebagai bar ASCII.
   const buckets = Array.from({ length: 6 }, (_, b) => ({
     label: `${pad2(b * 4)}-${pad2(b * 4 + 3)}`,
@@ -249,7 +254,7 @@ function ListeningClockSlide(props: SlideProps) {
           })}
         </div>
         <Divider />
-        <Row left="SAMPEL" right={`${recentCount} LAGU`} />
+        <Row left="SAMPEL" right={source === "file" ? `${recentCount} PUTAR (${props.year})` : `${recentCount} LAGU`} />
         <Row left="DURASI" right={`${recentMinutes} MENIT`} />
       </div>
     </SlideFrame>
@@ -258,14 +263,17 @@ function ListeningClockSlide(props: SlideProps) {
 
 function NumbersSlide(props: SlideProps) {
   const s = props.stats;
+  const isFile = s.source === "file";
   return (
     <SlideFrame props={props} label="Angka">
       <SectionTitle>Ringkasan transaksi</SectionTitle>
       <div className="mt-auto space-y-[2cqw] text-[3.8cqw]">
-        {props.range !== "long_term" && <Row left="LAGU SETIA (TOP 10)" right={`${s.loyalCount}/${s.loyalTotal}`} />}
+        {(isFile ? s.loyalTotal > 0 : props.range !== "long_term") && (
+          <Row left="LAGU SETIA (TOP 10)" right={`${s.loyalCount}/${s.loyalTotal}`} />
+        )}
         <Row left="ARTIS BERBEDA" right={String(s.uniqueArtistsInTop)} />
-        <Row left="LAGU TERATAS" right={String(s.trackCount)} />
-        <Row left="LAGU TERAKHIR" right={String(s.recentCount)} />
+        <Row left={isFile ? "LAGU BERBEDA" : "LAGU TERATAS"} right={String(s.trackCount)} />
+        <Row left={isFile ? `PUTAR (${props.year})` : "LAGU TERAKHIR"} right={String(s.recentCount)} />
         {s.topGenres.length > 0 && <Row left="GENRE" right={s.topGenres[0].toUpperCase()} />}
       </div>
       <Divider double />
@@ -326,6 +334,39 @@ function EmptySlide(props: SlideProps) {
       <p className="mt-auto text-center text-[9cqw] font-bold uppercase leading-tight">Data belum cukup</p>
       <p className="mt-[4cqw] text-center text-nota-faded">Dengerin lebih banyak dulu, atau ganti rentang waktunya.</p>
       <p className="mt-auto text-center font-bold">*** SILAKAN COBA LAGI ***</p>
+    </SlideFrame>
+  );
+}
+
+export function TotalMinutesSlide(props: SlideProps) {
+  const h = props.stats.history;
+  if (!h) return <EmptySlide {...props} />;
+
+  return (
+    <SlideFrame props={props} label="Total Menit">
+      <SectionTitle>Audit riwayat streaming</SectionTitle>
+      <div className="my-auto text-center">
+        <p className="text-[2.8cqw] text-nota-faded">TOTAL WAKTU DENGAR {props.year}</p>
+        <p className="mt-[1cqw] text-[15cqw] font-bold leading-none">
+          {h.totalMinutes.toLocaleString("id-ID")}
+        </p>
+        <p className="mt-[1cqw] text-[3.8cqw] font-bold">MENIT</p>
+      </div>
+
+      <div className="mt-auto space-y-[1.8cqw]">
+        <Divider double />
+        <Row left="TOTAL MENIT ASLI" right={h.totalMinutes.toLocaleString("id-ID")} bold />
+        {h.topTrack && (
+          <Row left="TOP TRACK" right={`${h.topTrack.name.toUpperCase()} (${h.topTrack.plays}X)`} />
+        )}
+        {h.busiestDay && (
+          <Row left="HARI PALING SIBUK" right={`${h.busiestDay.date} (${h.busiestDay.minutes} M)`} />
+        )}
+        <Divider />
+        <p className="text-center text-[2.6cqw] text-nota-faded">
+          data sampai {h.lastDate}
+        </p>
+      </div>
     </SlideFrame>
   );
 }

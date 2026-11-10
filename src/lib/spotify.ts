@@ -148,7 +148,7 @@ export async function getAccessToken(): Promise<string | null> {
 }
 
 export class SpotifyError extends Error {
-  constructor(public status: number, message: string) {
+  constructor(public status: number, message: string, public retryAfter: string | null = null) {
     super(message);
   }
 }
@@ -159,7 +159,7 @@ export async function spotifyGet<T>(path: string, token: string): Promise<T> {
     cache: "no-store",
   });
   if (!res.ok) {
-    throw new SpotifyError(res.status, await res.text());
+    throw new SpotifyError(res.status, await res.text(), res.headers.get("Retry-After"));
   }
   return res.json();
 }

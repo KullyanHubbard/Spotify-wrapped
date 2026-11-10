@@ -1,8 +1,27 @@
-import type { Track, WrappedData } from "./types";
+import type { HistoryStats, HistorySummary, Track, WrappedData } from "./types";
 
 export type Stats = ReturnType<typeof computeStats>;
 
-export function computeStats(data: WrappedData) {
+export function statsFromHistory(h: HistoryStats): Stats {
+  return {
+    topArtists: h.topArtists,
+    topTracks: h.topTracks,
+    topAlbum: h.topAlbum,
+    topGenres: h.topGenres,
+    hours: h.hours,
+    peakHour: h.peakHour,
+    recentCount: h.recentCount,
+    recentMinutes: h.recentMinutes,
+    loyalCount: h.loyalCount,
+    loyalTotal: h.loyalTotal,
+    uniqueArtistsInTop: h.uniqueArtistsInTop,
+    trackCount: h.trackCount,
+    history: h.history,
+    source: "file",
+  };
+}
+
+export function computeStats(data: WrappedData, history?: HistorySummary | null) {
   const { topArtists, topTracks, recent, longTermTrackIds } = data;
 
   const albumCount = new Map<string, { album: Track["album"]; artist: string; count: number }>();
@@ -11,7 +30,11 @@ export function computeStats(data: WrappedData) {
     entry.count++;
     albumCount.set(t.album.id, entry);
   }
-  const topAlbum = [...albumCount.values()].sort((a, b) => b.count - a.count)[0] ?? null;
+  const topAlbum = ([...albumCount.values()].sort((a, b) => b.count - a.count)[0] ?? null) as {
+    album: Track["album"];
+    artist: string;
+    count: number;
+  } | null;
 
   const genreCount = new Map<string, number>();
   topArtists.forEach((a, i) => {
@@ -44,6 +67,8 @@ export function computeStats(data: WrappedData) {
     loyalTotal: top10.length,
     uniqueArtistsInTop,
     trackCount: topTracks.length,
+    history: history ?? null,
+    source: "api" as "api" | "file",
   };
 }
 

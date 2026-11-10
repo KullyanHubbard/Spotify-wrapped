@@ -1,11 +1,38 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { toBlob } from "html-to-image";
 import { DESIGNS, type DesignId } from "@/designs";
-import { computeStats } from "@/lib/stats";
+import { PREVIEW_SAMPLE } from "@/designs/preview-sample";
+import { parseHistoryStats } from "@/lib/history";
+import { MODE_KEY, useMode } from "@/lib/mode";
+import { computeStats, statsFromHistory } from "@/lib/stats";
 import type { TimeRange, WrappedData } from "@/lib/types";
+
+const STORAGE_KEY = "wrapped.history.v2";
+const LEGACY_STORAGE_KEY = "wrapped.history.v1";
+
+function subscribeHistory(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("wrapped:history-change", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("wrapped:history-change", callback);
+  };
+}
+
+function getHistorySnapshot(): string | null {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function getServerHistorySnapshot(): string | null {
+  return null;
+}
 
 const RANGE_SHORT_LABEL: Record<TimeRange, string> = {
   short_term: "4 minggu",
@@ -31,7 +58,7 @@ async function generateSlideBlob(node: HTMLElement): Promise<Blob> {
 }
 
 export default function WrappedViewer({ design }: { design: DesignId }) {
-  const { slides, fontClassName } = DESIGNS[design];
+  const { slides, totalMinutesSlide, fontClassName } = DESIGNS[design];
   const [range, setRange] = useState<TimeRange>("medium_term");
   const [data, setData] = useState<WrappedData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,14 +70,51 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
   const cachedBlobRef = useRef<{ index: number; range: TimeRange; blob: Blob } | null>(null);
   const hintTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const mode = useMode();
+  const currentYear = new Date().getFullYear();
+  const rawHistory = useSyncExternalStore(subscribeHistory, getHistorySnapshot, getServerHistorySnapshot);
+  const storedHistory = useMemo(() => (mode === "lengkap" ? parseHistoryStats(rawHistory) : null), [mode, rawHistory]);
+  // Ringkasan tanpa pemilik diklaim akun pertama yang membukanya; milik akun lain tidak pernah ditampilkan.
+  const userId = data?.user.id;
+  const historyStats = storedHistory && userId && (storedHistory.ownerId ?? userId) === userId ? storedHistory : null;
+
+  useEffect(() => {
+    if (!storedHistory || !userId) return;
+    try {
+      if (storedHistory.ownerId === undefined) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...storedHistory, ownerId: userId }));
+      } else if (storedHistory.ownerId !== userId) {
+        localStorage.removeItem(STORAGE_KEY);
+      } else return;
+      window.dispatchEvent(new Event("wrapped:history-change"));
+    } catch {}
+  }, [storedHistory, userId]);
+
+  const stats = useMemo(() => {
+    if (!data) return null;
+    if (mode === "lengkap") {
+      return historyStats ? statsFromHistory(historyStats) : PREVIEW_SAMPLE.stats;
+    }
+    return computeStats(data);
+  }, [data, mode, historyStats]);
+
+  const activeSlides = useMemo(() => {
+    if (stats?.history && totalMinutesSlide) {
+      return [slides[0], totalMinutesSlide, ...slides.slice(1)];
+    }
+    return slides;
+  }, [slides, totalMinutesSlide, stats?.history]);
+
+  const safeIndex = Math.min(index, Math.max(0, activeSlides.length - 1));
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "ArrowLeft") setIndex((i) => Math.max(0, i - 1));
-      else if (e.key === "ArrowRight") setIndex((i) => Math.min(slides.length - 1, i + 1));
+      if (e.key === "ArrowLeft") setIndex(Math.max(0, safeIndex - 1));
+      else if (e.key === "ArrowRight") setIndex(Math.min(activeSlides.length - 1, safeIndex + 1));
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [slides.length]);
+  }, [activeSlides.length, safeIndex]);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,9 +140,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
     };
   }, [range, attempt]);
 
-  const stats = useMemo(() => (data ? computeStats(data) : null), [data]);
-
-  const step = (delta: number) => setIndex((i) => Math.min(slides.length - 1, Math.max(0, i + delta)));
+  const step = (delta: number) => setIndex(Math.min(activeSlides.length - 1, Math.max(0, safeIndex + delta)));
 
   // Pre-render blob di background saat slide aktif atau data berganti.
   // Menjaga agar saat tombol Share ditekan di iOS Safari, navigator.share terpanggil instan tanpa NotAllowedError.
@@ -91,7 +153,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
       if (!node || !active) return;
       try {
         const blob = await generateSlideBlob(node);
-        if (active) cachedBlobRef.current = { index, range, blob };
+        if (active) cachedBlobRef.current = { index: safeIndex, range, blob };
       } catch {
         // Blob cache gagal, fallback ke render on-demand
       }
@@ -101,7 +163,7 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
       active = false;
       clearTimeout(timer);
     };
-  }, [index, range, stats]);
+  }, [safeIndex, range, stats]);
 
   async function shareSlide() {
     const node = slideRef.current;
@@ -110,13 +172,13 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
 
     try {
       let blob: Blob;
-      if (cachedBlobRef.current && cachedBlobRef.current.index === index && cachedBlobRef.current.range === range) {
+      if (cachedBlobRef.current && cachedBlobRef.current.index === safeIndex && cachedBlobRef.current.range === range) {
         blob = cachedBlobRef.current.blob;
       } else {
         blob = await generateSlideBlob(node);
       }
 
-      const fileName = `wrapped-${range}-${index + 1}.png`;
+      const fileName = `wrapped-${range}-${safeIndex + 1}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
 
       const download = () => {
@@ -202,18 +264,32 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
     );
   }
 
-  const Slide = slides[index];
+  const Slide = activeSlides[safeIndex] ?? activeSlides[0];
   const slideWidth = "min(calc(100vw - 2rem), calc((100dvh - 9rem) * 9 / 16))";
 
   return (
     <main className="flex min-h-dvh flex-col items-center gap-4 bg-pri text-sec px-4 py-4">
+      {mode === "lengkap" && !historyStats && (
+        <div
+          role="status"
+          style={{ width: slideWidth }}
+          className="border-2 border-sec bg-pri px-3 py-2 font-mono text-xs leading-snug text-sec break-words"
+        >
+          Ini contoh. Upload file riwayat di{" "}
+          <Link href="/wrapped" className="font-bold text-red underline hover:text-sec">
+            halaman pilih design
+          </Link>{" "}
+          untuk melihat datamu.
+        </div>
+      )}
+
       <div className="flex gap-1.5" style={{ width: slideWidth }}>
-        {slides.map((_, i) => (
+        {activeSlides.map((_, i) => (
           <button
             key={i}
             aria-label={`Slide ${i + 1}`}
             onClick={() => setIndex(i)}
-            className={`h-2 flex-1 transition-colors ${i <= index ? "bg-red" : "bg-sec/20"}`}
+            className={`h-2 flex-1 transition-colors ${i <= safeIndex ? "bg-red" : "bg-sec/20"}`}
           />
         ))}
       </div>
@@ -224,9 +300,9 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
             stats={stats}
             name={data.user.name}
             range={data.range}
-            year={new Date().getFullYear()}
-            n={index + 1}
-            total={slides.length}
+            year={historyStats?.year ?? currentYear}
+            n={safeIndex + 1}
+            total={activeSlides.length}
           />
         </div>
         <button aria-label="Sebelumnya" className="absolute inset-y-0 left-0 w-1/3" onClick={() => step(-1)} />
@@ -244,33 +320,47 @@ export default function WrappedViewer({ design }: { design: DesignId }) {
       )}
 
       <div className="flex items-stretch gap-2 font-mono text-xs font-bold uppercase" style={{ width: slideWidth }}>
-        <select
-          aria-label="Rentang waktu"
-          value={range}
-          onChange={(e) => {
-            setData(null);
-            setRange(e.target.value as TimeRange);
-          }}
-          className="nextec-hard-button min-w-0 flex-1 appearance-none bg-pri text-sec px-3 py-2.5 cursor-pointer uppercase"
-        >
-          {(Object.keys(RANGE_SHORT_LABEL) as TimeRange[]).map((r) => (
-            <option key={r} value={r} className="bg-pri text-sec">
-              {RANGE_SHORT_LABEL[r]}
-            </option>
-          ))}
-        </select>
+        {mode !== "lengkap" && (
+          <select
+            aria-label="Rentang waktu"
+            value={range}
+            onChange={(e) => {
+              setData(null);
+              setRange(e.target.value as TimeRange);
+            }}
+            className="nextec-hard-button min-w-0 flex-1 appearance-none bg-pri text-sec px-3 py-2.5 cursor-pointer uppercase"
+          >
+            {(Object.keys(RANGE_SHORT_LABEL) as TimeRange[]).map((r) => (
+              <option key={r} value={r} className="bg-pri text-sec">
+                {RANGE_SHORT_LABEL[r]}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           onClick={shareSlide}
           disabled={exporting}
           title="Bagikan ke Instagram Story"
-          className="nextec-hard-button shrink-0 bg-red px-4 py-2.5 text-[#fff5ef] disabled:opacity-50"
+          className={`nextec-hard-button bg-red px-4 py-2.5 text-[#fff5ef] disabled:opacity-50 ${mode === "lengkap" ? "flex-1" : "shrink-0"}`}
         >
           {exporting ? "..." : "Share ↗"}
         </button>
         <Link href="/wrapped" className="nextec-hard-button flex items-center bg-pri text-sec px-3 py-2.5">
           Design
         </Link>
-        <form action="/api/auth/logout" method="post" className="flex">
+        <form
+          action="/api/auth/logout"
+          method="post"
+          className="flex"
+          onSubmit={() => {
+            // Browser bersama: riwayat dan mode tidak terikat akun, jangan sampai terbaca user berikutnya.
+            try {
+              localStorage.removeItem(STORAGE_KEY);
+              localStorage.removeItem(LEGACY_STORAGE_KEY);
+              localStorage.removeItem(MODE_KEY);
+            } catch {}
+          }}
+        >
           <button className="nextec-hard-button bg-pri text-sec px-3 py-2.5">Keluar</button>
         </form>
       </div>
