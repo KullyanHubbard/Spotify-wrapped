@@ -9,6 +9,9 @@ export default function MulaiPage() {
 
         <section className="border-b-2 border-sec/20 py-10 md:py-14">
           <div className="max-w-2xl">
+            <div className="mb-2 inline-block border-2 border-sec bg-sec px-2.5 py-0.5 font-mono text-xs font-bold uppercase text-pri">
+              PILAR 02 // KILASARA WRAPPED STUDIO
+            </div>
             <h1 className="font-display text-5xl sm:text-7xl uppercase tracking-tight">
               Pilih Mode Wrapped.
             </h1>
@@ -21,7 +24,7 @@ export default function MulaiPage() {
         <ModePicker />
 
         <footer className="py-8 border-t-2 border-sec/20 text-center font-mono text-xs text-sec/60">
-          WRAPPED · SINCE 2026
+          KILASARA STUDIO · SINCE 2026
         </footer>
       </div>
     </main>

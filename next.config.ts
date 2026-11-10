@@ -8,6 +8,7 @@ const CONTENT_SECURITY_POLICY = [
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
+  "media-src 'self' blob: mediastream:",
   "font-src 'self' data:",
   "connect-src 'self' data: blob:",
   "object-src 'none'",

@@ -7,8 +7,9 @@ const body = Poppins({ variable: "--font-body-face", subsets: ["latin"], weight:
 const mono = Space_Mono({ variable: "--font-mono-face", subsets: ["latin"], weight: ["400", "700"] });
 
 export const metadata: Metadata = {
-  title: "Wrapped | Spotify Wrapped Kapan Saja",
-  description: "Rangkuman musik Spotify kamu siap diekspor ke Instagram Story.",
+  title: "Kilasara Studio | Online Photo Studio, Wrapped & Katalog Template",
+  description:
+    "Platform kreatif digital untuk mengabadikan Kilas Foto (Online Photobooth & Frame) dan Aksara Cerita (Spotify Wrapped & Data Storytelling) siap unggah ke Story.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

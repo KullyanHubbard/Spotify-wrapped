@@ -76,7 +76,7 @@ export default function DesignPickerPage() {
         </ul>
 
         <footer className="py-8 border-t-2 border-sec/20 text-center font-mono text-xs text-sec/60">
-          WRAPPED · SINCE 2026
+          KILASARA STUDIO · SINCE 2026
         </footer>
       </div>
     </main>
